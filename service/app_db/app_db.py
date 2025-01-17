@@ -30,7 +30,7 @@ def store_to_db(body):
     with db.connect() as conn:
         call = json.loads(body)   
         ins = table_calls.insert().values(
-            id = 1,
+            #id = 1,
             caller = call.get('caller'),
             callee = call.get('callee'),
             caller_id = call.get('caller_id'),

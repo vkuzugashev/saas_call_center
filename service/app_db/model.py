@@ -4,7 +4,12 @@ from sqlalchemy import create_engine, MetaData, Table, String, Integer, Column, 
 
 load_dotenv()
 
-db_url = os.environ.get('DB_URL')
+db_user = os.environ.get('DB_USER', 'root')
+db_pwd = os.environ.get('DB_PWD', '1234567')
+db_host = os.environ.get('DB_HOST', 'localhost')
+db_port = os.environ.get('DB_PORT', 3306)
+db_name = os.environ.get('DB_NAME', 'call_center')
+db_url = f'mysql+pymysql://{db_user}:{db_pwd}@{db_host}/{db_name}'
 db = create_engine(db_url, echo=True)
 
 metadata = MetaData()
@@ -22,6 +27,6 @@ table_calls = Table('calls', metadata,
 )
 
 if __name__ == '__main__':
-    metadata.drop_all(db)
+    #metadata.drop_all(db)
     metadata.create_all(db)
     print('Database schema created.')

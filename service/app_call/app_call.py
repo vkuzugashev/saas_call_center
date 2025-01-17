@@ -53,15 +53,15 @@ def get_client_id(msisdn):
         return None
 
 def dial_begin(uniqueid, caller, callee, start, call_status):
-    logger.info(f'DialBegin, start processing, call: {call}')
     caller_id = get_client_id(caller)
     call = {'uniqueid': uniqueid, 'start': start, 'end': None, 'caller': caller, 'callee': callee, 'caller_id': caller_id, 'callee_id': None, 'call_status': call_status}    
+    logger.info(f'DialBegin, start processing, call: {call}')    
     redis_set(uniqueid, call)
     logger.info(f'DialBegin processed, call stored in redis: {call}')
 
 def dial_end(uniqueid, call_status):
-    logger.info(f'DialEnd, start processing, call: {call}')
     call = redis_get(uniqueid)
+    logger.info(f'DialEnd, start processing, call: {call}')    
     if call is not None:
         call['call_status'] = call_status
         redis_set(uniqueid, call)
@@ -75,6 +75,7 @@ def hangup(uniqueid, end):
     if call is not None:
         if call['call_status'] == 'ANSWER':
             call['end'] = end
+        redis_set(uniqueid, call)
         store_to_queue(call)
         logger.info(f'HangUp processed, call stored in queue: {call}')
     else:

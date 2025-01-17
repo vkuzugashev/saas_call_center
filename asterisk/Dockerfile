@@ -1,4 +1,4 @@
-FROM andrius/asterisk
+FROM andrius/asterisk:alpine-latest-18.15.1
 
 LABEL maintainer="KS42 team"
 
