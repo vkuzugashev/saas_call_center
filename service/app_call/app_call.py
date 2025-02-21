@@ -54,10 +54,20 @@ def get_client_id(msisdn):
 
 def dial_begin(uniqueid, caller, callee, start, call_status):
     caller_id = get_client_id(caller)
-    call = {'uniqueid': uniqueid, 'start': start, 'end': None, 'caller': caller, 'callee': callee, 'caller_id': caller_id, 'callee_id': None, 'call_status': call_status}    
+    call = {'uniqueid': uniqueid, 'start': start, 'end': None, 'caller': caller, 'callee': callee, 'caller_id': caller_id, 'callee_id': None, 'call_status': call_status, 'record_file': None}    
     logger.info(f'DialBegin, start processing, call: {call}')    
     redis_set(uniqueid, call)
     logger.info(f'DialBegin processed, call stored in redis: {call}')
+
+def varset(uniqueid, record_file):
+    call = redis_get(uniqueid)
+    logger.info(f'VarSet, start processing, call: {call}, record_file: {record_file}')  
+    if call is not None:
+        call['record_file'] = record_file  
+        redis_set(uniqueid, call)
+        logger.info(f'VarSet processed, call stored in redis: {call}')  
+    else:
+        logger.error(f'VarSet processed, redis have`t key: {uniqueid}, call: {call}')        
 
 def dial_end(uniqueid, call_status):
     call = redis_get(uniqueid)
@@ -118,12 +128,18 @@ def event_parse_and_route(body):
         uniqueid = event['params']['Linkedid']
         end = datetime.now().isoformat() #.strftime('%Y-%m-%d %H:%M:%S')   
         hangup(uniqueid, end)
+
+    elif event['event'] == 'VarSet' and event['params']['Variable'] == 'MIXMONITOR_FILENAME':
+        # запись аудео файла
+        uniqueid = event['params']['Linkedid']
+        record_file = event['params']['Value']
+        varset(uniqueid, record_file)    
     
-    else:
-        logger.info(f'Unknow event: {body}')
+    #else:
+    #    logger.info(f'Unknow event: {body}')
 
 def callback(ch, method, properties, body):    
-    logger.info(f'Received new event: {body}')
+    #logger.info(f'Received new event: {body}')
     event_parse_and_route(body)
         
 def run():

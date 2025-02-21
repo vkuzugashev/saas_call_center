@@ -37,7 +37,8 @@ def store_to_db(body):
             callee_id = call.get('callee_id'),
             call_start = datetime.fromisoformat(call.get('start')),
             call_end = datetime.fromisoformat(call.get('end')) if call.get('end') is not None else None,
-            call_status  = call.get('call_status')
+            call_status  = call.get('call_status'),
+            record_file  = call.get('record_file')
         )
         try:
             conn.execute(ins)
