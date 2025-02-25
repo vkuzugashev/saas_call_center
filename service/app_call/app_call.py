@@ -28,7 +28,7 @@ def redis_get(key):
     value = r.get(key)
     logger.debug(f'Get from redis: {key} -> {value}')
     if value is not None:
-        return json.loads(value);
+        return json.loads(value)
     else:
         return None
     
@@ -54,7 +54,17 @@ def get_client_id(msisdn):
 
 def dial_begin(uniqueid, caller, callee, start, call_status):
     caller_id = get_client_id(caller)
-    call = {'uniqueid': uniqueid, 'start': start, 'end': None, 'caller': caller, 'callee': callee, 'caller_id': caller_id, 'callee_id': None, 'call_status': call_status, 'record_file': None}    
+    call = {'uniqueid': uniqueid,
+            'start': start, 
+            'end': None, 
+            'caller': caller, 
+            'callee': callee, 
+            'caller_id': caller_id, 
+            'callee_id': None, 
+            'call_status': call_status, 
+            'record_file': None, 
+            'record_file_in': None, 
+            'record_file_out': None}    
     logger.info(f'DialBegin, start processing, call: {call}')    
     redis_set(uniqueid, call)
     logger.info(f'DialBegin processed, call stored in redis: {call}')
@@ -63,7 +73,13 @@ def varset(uniqueid, record_file):
     call = redis_get(uniqueid)
     logger.info(f'VarSet, start processing, call: {call}, record_file: {record_file}')  
     if call is not None:
+        record_file =  record_file.replace("/var/spool/asterisk/monitor", "")
+        name, ext = os.path.splitext(record_file)
+        record_file_in =  f"{name}-in{ext}"
+        record_file_out =  f"{name}-out{ext}"
         call['record_file'] = record_file  
+        call['record_file_in'] = record_file_in 
+        call['record_file_out'] = record_file_out 
         redis_set(uniqueid, call)
         logger.info(f'VarSet processed, call stored in redis: {call}')  
     else:

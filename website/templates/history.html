@@ -44,6 +44,8 @@
                     <th scope="col">время звонка</th>
                     <th scope="col">время конца звонка</th>
                     <th scope="col">статус звонка</th>
+                    <th scope="col">аудио запись</th>
+                    <th scope="col">перевод</th>
                 </tr>
             </thead>
             <tbody class="table-group-divider">
@@ -56,6 +58,8 @@
                         <td>{{row.call_start}}</td>
                         <td>{{row.call_end}}</td>
                         <td>{{row.call_status}}</td>
+                        <td><a href="http://localhost:8088/static/monitor{{row.record_file}}" target="_blank" >Запись</a></td>
+                        <td></td>
                     </tr>                
                 {% endfor %}
             </tbody>

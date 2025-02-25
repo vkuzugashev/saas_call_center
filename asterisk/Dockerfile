@@ -6,6 +6,7 @@ LABEL maintainer="KS42 team"
 EXPOSE 5060/udp 
 EXPOSE 5038 
 EXPOSE 10000-10010/udp
+EXPOSE 8088
 
 #VOLUME /var/lib/asterisk/sounds /var/lib/asterisk/keys /var/lib/asterisk/phoneprov /var/spool/asterisk /var/log/asterisk
 VOLUME /var/lib/asterisk/keys /var/lib/asterisk/phoneprov /var/spool/asterisk /var/log/asterisk
@@ -17,10 +18,15 @@ ADD rtp.conf /etc/asterisk/rtp.conf
 ADD extensions.conf /etc/asterisk/extensions.conf
 ADD pjsip.conf /etc/asterisk/pjsip.conf
 ADD queues.conf etc/asterisk/queues.conf
+ADD http.conf /etc/asterisk/http.conf
 
 RUN apk add --update tcpdump && rm -rf /var/cache/apk/*
 RUN apk add busybox-extras
 
+WORKDIR /var/lib/asterisk/static-http
+RUN ln -s /var/spool/asterisk/monitor/ monitor
+
+WORKDIR /
 #ENV EXTERNADDR=192.168.1.107
 #ENV LOCALNET=192.168.0.0/255.255.0.0
 

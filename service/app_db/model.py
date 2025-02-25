@@ -23,7 +23,10 @@ table_calls = Table('calls', metadata,
     Column('call_start', DateTime, nullable=False),
     Column('call_end', DateTime, nullable=True),
     Column('call_status', String(50), nullable=True),
-    Column('record_file', String(255), nullable=True)
+    Column('record_file', String(255), nullable=True),
+    Column('record_file_in', String(255), nullable=True),
+    Column('record_file_out', String(255), nullable=True),
+    Column('transcription', String(1000), nullable=True)
 )
 
 if __name__ == '__main__':
