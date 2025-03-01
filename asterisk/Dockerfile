@@ -5,7 +5,7 @@ LABEL maintainer="KS42 team"
 
 EXPOSE 5060/udp 
 EXPOSE 5038 
-EXPOSE 10000-10001/udp
+EXPOSE 10000-10020/udp
 
 #VOLUME /var/lib/asterisk/sounds /var/lib/asterisk/keys /var/lib/asterisk/phoneprov /var/spool/asterisk /var/log/asterisk
 VOLUME /var/lib/asterisk/keys /var/lib/asterisk/phoneprov /var/spool/asterisk /var/log/asterisk
@@ -20,7 +20,7 @@ ADD pjsip.conf /etc/asterisk/pjsip.conf
 
  
 RUN apk add --update tcpdump && rm -rf /var/cache/apk/*
-RUN apk add busybox-extras
+#RUN apk add busybox-extras
 
 #ENV EXTERNADDR=192.168.1.107
 #ENV LOCALNET=192.168.0.0/255.255.0.0
