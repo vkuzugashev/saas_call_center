@@ -50,6 +50,7 @@ def login():
 
         user = User(id=1, username=manager_user, password=manager_pwd)        
         if user.username == username and user.password == password:
+            print(user)
             login_user(user)
             return redirect(url_for('index'))
         else:

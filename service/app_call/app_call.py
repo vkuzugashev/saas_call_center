@@ -28,7 +28,7 @@ def redis_get(key):
     value = r.get(key)
     logger.debug(f'Get from redis: {key} -> {value}')
     if value is not None:
-        return json.loads(value);
+        return json.loads(value)
     else:
         return None
     
@@ -53,15 +53,41 @@ def get_client_id(msisdn):
         return None
 
 def dial_begin(uniqueid, caller, callee, start, call_status):
-    logger.info(f'DialBegin, start processing, call: {call}')
     caller_id = get_client_id(caller)
-    call = {'uniqueid': uniqueid, 'start': start, 'end': None, 'caller': caller, 'callee': callee, 'caller_id': caller_id, 'callee_id': None, 'call_status': call_status}    
+    call = {'uniqueid': uniqueid,
+            'start': start, 
+            'end': None, 
+            'caller': caller, 
+            'callee': callee, 
+            'caller_id': caller_id, 
+            'callee_id': None, 
+            'call_status': call_status, 
+            'record_file': None, 
+            'record_file_in': None, 
+            'record_file_out': None}    
+    logger.info(f'DialBegin, start processing, call: {call}')    
     redis_set(uniqueid, call)
     logger.info(f'DialBegin processed, call stored in redis: {call}')
 
-def dial_end(uniqueid, call_status):
-    logger.info(f'DialEnd, start processing, call: {call}')
+def varset(uniqueid, record_file):
     call = redis_get(uniqueid)
+    logger.info(f'VarSet, start processing, call: {call}, record_file: {record_file}')  
+    if call is not None:
+        record_file =  record_file.replace("/var/spool/asterisk/monitor", "")
+        name, ext = os.path.splitext(record_file)
+        record_file_in =  f"{name}-in{ext}"
+        record_file_out =  f"{name}-out{ext}"
+        call['record_file'] = record_file  
+        call['record_file_in'] = record_file_in 
+        call['record_file_out'] = record_file_out 
+        redis_set(uniqueid, call)
+        logger.info(f'VarSet processed, call stored in redis: {call}')  
+    else:
+        logger.error(f'VarSet processed, redis have`t key: {uniqueid}, call: {call}')        
+
+def dial_end(uniqueid, call_status):
+    call = redis_get(uniqueid)
+    logger.info(f'DialEnd, start processing, call: {call}')    
     if call is not None:
         call['call_status'] = call_status
         redis_set(uniqueid, call)
@@ -75,6 +101,7 @@ def hangup(uniqueid, end):
     if call is not None:
         if call['call_status'] == 'ANSWER':
             call['end'] = end
+        redis_set(uniqueid, call)
         store_to_queue(call)
         logger.info(f'HangUp processed, call stored in queue: {call}')
     else:
@@ -117,12 +144,18 @@ def event_parse_and_route(body):
         uniqueid = event['params']['Linkedid']
         end = datetime.now().isoformat() #.strftime('%Y-%m-%d %H:%M:%S')   
         hangup(uniqueid, end)
+
+    elif event['event'] == 'VarSet' and event['params']['Variable'] == 'MIXMONITOR_FILENAME':
+        # запись аудео файла
+        uniqueid = event['params']['Linkedid']
+        record_file = event['params']['Value']
+        varset(uniqueid, record_file)    
     
-    else:
-        logger.info(f'Unknow event: {body}')
+    #else:
+    #    logger.info(f'Unknow event: {body}')
 
 def callback(ch, method, properties, body):    
-    logger.info(f'Received new event: {body}')
+    #logger.info(f'Received new event: {body}')
     event_parse_and_route(body)
         
 def run():

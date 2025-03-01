@@ -17,21 +17,26 @@ logging.basicConfig(level=log_level)
 logger = logging.getLogger('app_ami')
 
 def event_listener(event,**kwargs):
-    logger.info('Start processing, asterisk event:', event)    
+    logger.info(f"Принято событие: {event}")
+    # Обработка событий MixMonitor
+    #if event.name in ['MixMonitorStart', 'MixMonitorStop']:
+    #    logger.info(f"MixMonitor event: {event.name}, File: {event.keys.get('File')}")
+
     with pika.BlockingConnection(pika.ConnectionParameters(rabbit_host, port=rabbit_port)) as connection:
-        channel = connection.channel()
-        channel.queue_declare(queue='events')
-        channel.basic_publish(exchange='',
-                            routing_key='events',
-                            body=json.dumps({'event': event.name, 'params': event.keys}))
-        logger.info(f"Sent asterisk to queue, event: {event}")
+         channel = connection.channel()
+         channel.queue_declare(queue='events')
+         channel.basic_publish(exchange='',
+                             routing_key='events',
+                             body=json.dumps({'event': event.name, 'params': event.keys}))
+         logger.info(f"Sent asterisk to queue, event: {event}")
 
 def run():
     logger.info('Starting ...')
     
     client = AMIClient(address=asterisk_host, port=asterisk_port, timeout=180, encoding='ascii')
     AutoReconnect(client)    
-    client.add_event_listener(event_listener, white_list=['DialBegin','DialEnd','Hangup'])
+    #client.add_event_listener(event_listener)
+    client.add_event_listener(event_listener, white_list=['DialBegin','DialEnd','Hangup','VarSet'])
     
     future = client.login(username=asterisk_user,secret=asterisk_pwd)
     if future.response.is_error():
