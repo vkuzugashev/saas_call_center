@@ -5,7 +5,7 @@ LABEL maintainer="KS42 team"
 
 EXPOSE 5060/udp 
 EXPOSE 5038 
-EXPOSE 10000-100100/udp
+EXPOSE 10000-10100/udp
 
 #VOLUME /var/lib/asterisk/sounds /var/lib/asterisk/keys /var/lib/asterisk/phoneprov /var/spool/asterisk /var/log/asterisk
 VOLUME /var/lib/asterisk/keys /var/lib/asterisk/phoneprov /var/spool/asterisk /var/log/asterisk

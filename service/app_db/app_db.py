@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO')
-rabbit_host = os.environ.get('RABBIT_HOST', '0.0.0.0')
+rabbit_host = os.environ.get('RABBIT_HOST', 'localhost')
 rabbit_port = int(os.environ.get('RABBIT_PORT', '5672'))
 
 logging.basicConfig(level=log_level)

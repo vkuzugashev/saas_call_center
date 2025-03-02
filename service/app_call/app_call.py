@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO')
-rabbit_host = os.environ.get('RABBIT_HOST')
+rabbit_host = os.environ.get('RABBIT_HOST', 'localhost')
 rabbit_port = int(os.environ.get('RABBIT_PORT', '5672'))
-redis_host = os.environ.get('REDIS_HOST')
+redis_host = os.environ.get('REDIS_HOST', 'localhost')
 redis_port = int(os.environ.get('REDIS_PORT', '6379'))
 client_url = os.environ.get('CLIENT_URL', None)
 

@@ -2,7 +2,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const messages = document.createElement("ul");
     document.body.appendChild(messages);
   
-    const websocket = new WebSocket("ws://localhost:5678/");
+    const websocket = new WebSocket("ws://localhost:5078/");
     websocket.onmessage = ({ data }) => {
       data = JSON.parse(data)
       console.log(data);
