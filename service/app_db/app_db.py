@@ -25,6 +25,8 @@ def callback(ch, method, properties, body):
     result = store_to_db(body)
     if result:
         ch.basic_ack(delivery_tag = method.delivery_tag)
+    else:
+        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)        
 
 def store_to_db(body):
     with db.connect() as conn:
