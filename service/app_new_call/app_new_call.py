@@ -1,10 +1,16 @@
-import sys, os, json, re, requests, websockets, asyncio, aiormq, random, asyncio
+import sys, os, logging, json, re, requests, websockets, asyncio, aiormq, random, asyncio
 from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
 
-rabbit_host = os.environ.get('RABBIT_HOST')
+log_level = os.environ.get('LOG_LEVEL', 'INFO')
+rabbit_host = os.environ.get('RABBIT_HOST', 'localhost')
+
+logging.basicConfig(level=log_level)
+logger = logging.getLogger('app_new_call')
+
+
 clients = set()
 
 def uniqueid_to_timestamp(uniqueid):
@@ -23,7 +29,7 @@ def get_client_info(msisdn):
 def dial_begin(uniqueid, caller, callee, start, call_status):
     message = get_client_info(caller)
     if message != None:        
-        print('dial_begin wwith message:', message)
+        logger.info('dial_begin wwith message:', message)
         websockets.broadcast(clients, json.dumps(message))
         # websockets.broadcast(clients, json.dumps(caller))
 
@@ -33,10 +39,9 @@ def dial_end(uniqueid, call_status):
 def hangup(uniqueid, end):
     None
     
-def event_parse_and_route(body):
-    
+def event_parse_and_route(body):    
     event = json.loads(body)
-    print(type(event),'\r\n')
+    logger.info('Get event:', event)
     
     if event['event'] == 'DialBegin':
         # начало дозвона
@@ -62,10 +67,10 @@ def event_parse_and_route(body):
         hangup(uniqueid, end)
     
     else:
-        print(f'Unknow event: {body}\r\n')
+        logger.warn('Unknow event:', body)
 
 async def on_message(message):    
-    print(f' [x] Received {message.body}')
+    logger.info(f' [x] Received {message.body}')
     event_parse_and_route(message.body)
 
 async def handler(websocket):
