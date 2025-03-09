@@ -2,6 +2,7 @@ import socket
 import re
 import platform
 import subprocess
+import time  # Добавляем импорт модуля time
 
 # Функция для создания Docker/Podman образа
 def create_container_image(image_name):
@@ -29,7 +30,8 @@ def run_container(container_name, image_name):
             '-p', '5060:5060/udp',
             '-p', '5038:5038',
             '-p', '10000-10100:10000-10100/udp',
-            '-dt',  # detached mode
+            '-d',  # detached mode
+            '-t',  # allocate a pseudo-TTY
             image_name
         ]
     elif system == 'linux':
@@ -39,7 +41,8 @@ def run_container(container_name, image_name):
             '-p', '5060:5060/udp',
             '-p', '5038:5038',
             '-p', '10000-10100:10000-10100/udp',
-            '-dt',  # detached mode
+            '-d',  # detached mode
+            '-t',  # allocate a pseudo-TTY
             image_name
         ]
     else:
@@ -92,6 +95,9 @@ def remove_image(image_name):
         command = ['podman', 'rmi', image_name]
     else:
         raise RuntimeError(f"Не поддерживаемая платформа: {system}.")
+
+    # Добавляем задержку на 5 секунд
+    time.sleep(5)  # Пауза на 5 секунд
 
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
