@@ -140,21 +140,21 @@ if __name__ == "__main__":
     try:
         stop_container(container_name)
     except RuntimeError as e:
-        if "No such container" not in str(e):
+        if "no such container" not in str(e).lower():
             raise e
 
     # Удаляем старый контейнер, если он существует
     try:
         remove_container(container_name)
     except RuntimeError as e:
-        if "No such container" not in str(e):
+        if "no such container" not in str(e).lower():
             raise e
 
     # Проверяем наличие образа и удаляем его, если он существует
     try:
         remove_image(image_name)
     except RuntimeError as e:
-        if "No such image" not in str(e):
+        if "no such image" not in str(e).lower():
             raise e
 
     # Создание Docker/Podman образа
