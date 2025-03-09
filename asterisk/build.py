@@ -84,6 +84,8 @@ def remove_container(container_name):
     if result.returncode != 0:
         raise RuntimeError(f"Ошибка при удалении контейнера: {result.stderr}")
     else:
+        # Добавляем задержку на 5 секунд
+        time.sleep(5)  # Пауза на 5 секунд
         print(f"Контейнер '{container_name}' успешно удален.")
 
 # Функция для удаления образа
@@ -95,9 +97,6 @@ def remove_image(image_name):
         command = ['podman', 'rmi', image_name]
     else:
         raise RuntimeError(f"Не поддерживаемая платформа: {system}.")
-
-    # Добавляем задержку на 5 секунд
-    time.sleep(5)  # Пауза на 5 секунд
 
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
