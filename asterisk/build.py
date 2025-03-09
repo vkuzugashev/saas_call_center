@@ -154,7 +154,8 @@ if __name__ == "__main__":
     try:
         remove_image(image_name)
     except RuntimeError as e:
-        if "no such image" not in str(e).lower():
+        err = str(e).lower()
+        if "no such image" not in err and "image not known" not in err:
             raise e
 
     # Создание Docker/Podman образа
