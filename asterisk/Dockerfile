@@ -16,7 +16,9 @@ ADD modules.conf /etc/asterisk/modules.conf
 ADD rtp.conf /etc/asterisk/rtp.conf
 ADD extensions.conf /etc/asterisk/extensions.conf
 ADD pjsip.conf /etc/asterisk/pjsip.conf
+ADD users.conf /etc/asterisk/users.conf
 ADD queues.conf etc/asterisk/queues.conf
+ADD queue_operators.conf etc/asterisk/queue_operators.conf
 ADD http.conf /etc/asterisk/http.conf
 
 RUN apk add --update tcpdump && rm -rf /var/cache/apk/*
