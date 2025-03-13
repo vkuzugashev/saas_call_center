@@ -56,8 +56,10 @@ async def handle_incoming_message(message):
             message = get_client_info(caller)
             if message is not None:        
                 if clients:
-                    logger.info('Отправка websocket клиентам сообщения:', message)
-                    await asyncio.wait([client.send(message) for client in clients])
+                    text = json.dumps(message)
+                    logger.info('Отправка websocket клиентам сообщения:', text)
+                    for client in clients:
+                        await client.send(text) 
     except KeyError as e:
         logger.error(f"KeyError occurred: {e}. Event data: {event}")
     except json.JSONDecodeError as e:

@@ -17,11 +17,14 @@ ADD rtp.conf /etc/asterisk/rtp.conf
 ADD extensions.conf /etc/asterisk/extensions.conf
 ADD pjsip.conf /etc/asterisk/pjsip.conf
 ADD users.conf /etc/asterisk/users.conf
+ADD users_template.conf /etc/asterisk/users_template.conf
+ADD users_extensions.conf /etc/asterisk/users_extensions.conf
 ADD queues.conf etc/asterisk/queues.conf
 ADD queue_operators.conf etc/asterisk/queue_operators.conf
+ADD members_operators.conf etc/asterisk/members_operators.conf
 ADD http.conf /etc/asterisk/http.conf
 
-RUN apk add --update tcpdump && rm -rf /var/cache/apk/*
+#RUN apk add --update tcpdump && rm -rf /var/cache/apk/*
 #RUN apk add busybox-extras
 
 #ENV EXTERNADDR=192.168.1.107

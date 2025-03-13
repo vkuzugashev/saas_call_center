@@ -138,6 +138,12 @@ if __name__ == "__main__":
     # Замена значений в файле
     replace_in_file(file_path, ip_address)
 
+    # Указываем путь до файла users_template.conf
+    file_path = 'users_template.conf'
+
+    # Замена значений в файле
+    replace_in_file(file_path, ip_address)
+
     image_name = 'test'
     container_name = 'asterisk'
 
