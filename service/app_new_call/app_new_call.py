@@ -7,12 +7,12 @@ from functools import lru_cache
 load_dotenv()
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-rabbit_host = os.environ.get('RABBIT_HOST', 'localhost')
+RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
 WEBSOCKET_HOST = os.environ.get('WEBSOCKET_HOST', 'localhost')
 WEBSOCKET_PORT = os.environ.get('WEBSOCKET_PORT', 5078)
 CLIENT_INFO_URL = os.environ.get('CLIENT_INFO_URL', 'http://localhost:8000/clients')
-AMQP_QUEUE = os.environ.get('RABBIT_EVENTS_QUEUE', 'events')
-AMQP_URL = f'amqp://{rabbit_host}/'
+AMQP_ECHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE', 'events')
+AMQP_URL = f'amqp://{RABBIT_HOST}/'
 LAST_ACTIVITY_TIMEOUT = 30  # Время неактивности в секундах
 
 logging.basicConfig(level=LOG_LEVEL)
@@ -77,7 +77,9 @@ async def consummer():
             if connection is None or connection.is_closed:
                 connection = await aiormq.connect(AMQP_URL)
                 channel = await connection.channel()
-                declare_ok = await channel.queue_declare(queue=AMQP_QUEUE)
+                channel.exchange_declare(exchange=AMQP_ECHANGE, exchange_type='fanout')
+                # используем временную очередь
+                declare_ok = await channel.queue_declare(queue='')
                 await channel.basic_consume(declare_ok.queue, handle_incoming_message, no_ack=True)  
                 logger.info('Ожидание сообщений.')
             else:

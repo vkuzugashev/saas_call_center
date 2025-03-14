@@ -5,14 +5,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-log_level = os.environ.get('LOG_LEVEL', 'INFO')
-rabbit_host = os.environ.get('RABBIT_HOST', 'localhost')
-rabbit_port = int(os.environ.get('RABBIT_PORT', '5672'))
-redis_host = os.environ.get('REDIS_HOST', 'localhost')
-redis_port = int(os.environ.get('REDIS_PORT', '6379'))
-client_url = os.environ.get('CLIENT_URL', None)
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
+RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
+CLIENT_URL = os.environ.get('CLIENT_URL', None)
+RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE', 'events')
+RABBIT_EVENTS_QUEUE = os.environ.get('RABBIT_EVENTS_QUEUE', 'events')
 
-logging.basicConfig(level=log_level)
+logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger('app_call')
 
 def uniqueid_to_timestamp(uniqueid):
@@ -20,7 +22,7 @@ def uniqueid_to_timestamp(uniqueid):
     return ts
 
 def get_redis_client():
-    pool = redis.ConnectionPool(host=redis_host, port=redis_port)
+    pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT)
     return redis.Redis(connection_pool=pool)
 
 def redis_get(key):
@@ -39,8 +41,8 @@ def redis_set(key, value):
     logger.debug(f'Stored in redis: {key} -> {str_call}')
     
 def get_client_id(msisdn):
-    if client_url is not None:
-        response = requests.get(f'{client_url}/{msisdn}')
+    if CLIENT_URL is not None:
+        response = requests.get(f'{CLIENT_URL}/{msisdn}')
         content = response.content
         if response.status_code == 200:
             data = json.loads(content)
@@ -108,7 +110,7 @@ def hangup(uniqueid, end):
         logger.error(f'HangUp processed, redis have`t key: {uniqueid}')
 
 def store_to_queue(call,**kwargs):
-    with pika.BlockingConnection(pika.ConnectionParameters(rabbit_host, port=rabbit_port)) as connection:
+    with pika.BlockingConnection(pika.ConnectionParameters(RABBIT_HOST, port=RABBIT_PORT)) as connection:
         channel = connection.channel()    
         channel.queue_declare(queue='calls')
         channel.basic_publish(exchange='',
@@ -159,10 +161,13 @@ def callback(ch, method, properties, body):
     event_parse_and_route(body)
         
 def run():
-    with pika.BlockingConnection(pika.ConnectionParameters(host=rabbit_host)) as connection:
+    with pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST)) as connection:
         channel = connection.channel()
-        channel.queue_declare(queue='events')   
-        channel.basic_consume(queue='events', auto_ack=True, on_message_callback=callback)
+        channel.exchange_declare(exchange=RABBIT_EVENTS_EXCHANGE, exchange_type='fanout')
+        result = channel.queue_declare(queue=RABBIT_EVENTS_QUEUE, exclusive=True)
+        queue_name = result.method.queue
+        channel.queue_bind(exchange=RABBIT_EVENTS_EXCHANGE, queue=queue_name)
+        channel.basic_consume(queue=queue_name, auto_ack=True, on_message_callback=callback)
         logger.info('[*] Waiting for messages. To exit press CTRL+C')
         channel.start_consuming()
 
