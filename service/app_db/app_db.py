@@ -5,15 +5,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-log_level = os.environ.get('LOG_LEVEL', 'INFO')
-rabbit_host = os.environ.get('RABBIT_HOST', 'localhost')
-rabbit_port = int(os.environ.get('RABBIT_PORT', '5672'))
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
+RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
 
-logging.basicConfig(level=log_level)
+logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger('app_db')
         
 def run():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbit_host, port=rabbit_port))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST, port=RABBIT_PORT))
     channel = connection.channel()
     channel.queue_declare(queue='calls')   
     channel.basic_consume(queue='calls', auto_ack=False, on_message_callback=callback)

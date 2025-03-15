@@ -12,7 +12,7 @@ ASTERISK_USER = os.environ.get('ASTERISK_USER', 'managerami')
 ASTERISK_PWD = os.environ.get('ASTERISK_PWD', 'mysecret')
 RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
 RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
-RABBIT_EVENTS_ECHANGE = int(os.environ.get('RABBIT_EVENTS_ECHANGE', 'events'))
+RABBIT_EVENTS_ECHANGE = os.environ.get('RABBIT_EVENTS_ECHANGE', 'events')
 
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger('app_ami')
