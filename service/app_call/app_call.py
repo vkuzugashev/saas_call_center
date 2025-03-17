@@ -5,14 +5,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-log_level = os.environ.get('LOG_LEVEL', 'INFO')
-rabbit_host = os.environ.get('RABBIT_HOST')
-rabbit_port = int(os.environ.get('RABBIT_PORT', '5672'))
-redis_host = os.environ.get('REDIS_HOST')
-redis_port = int(os.environ.get('REDIS_PORT', '6379'))
-client_url = os.environ.get('CLIENT_URL', None)
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
+RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
+CLIENT_URL = os.environ.get('CLIENT_URL', None)
+RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE', 'events')
+RABBIT_EVENTS_QUEUE = os.environ.get('RABBIT_EVENTS_QUEUE', 'events')
 
-logging.basicConfig(level=log_level)
+logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger('app_call')
 
 def uniqueid_to_timestamp(uniqueid):
@@ -20,7 +22,7 @@ def uniqueid_to_timestamp(uniqueid):
     return ts
 
 def get_redis_client():
-    pool = redis.ConnectionPool(host=redis_host, port=redis_port)
+    pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT)
     return redis.Redis(connection_pool=pool)
 
 def redis_get(key):
@@ -28,7 +30,7 @@ def redis_get(key):
     value = r.get(key)
     logger.debug(f'Get from redis: {key} -> {value}')
     if value is not None:
-        return json.loads(value);
+        return json.loads(value)
     else:
         return None
     
@@ -39,8 +41,8 @@ def redis_set(key, value):
     logger.debug(f'Stored in redis: {key} -> {str_call}')
     
 def get_client_id(msisdn):
-    if client_url is not None:
-        response = requests.get(f'{client_url}/{msisdn}')
+    if CLIENT_URL is not None:
+        response = requests.get(f'{CLIENT_URL}/{msisdn}')
         content = response.content
         if response.status_code == 200:
             data = json.loads(content)
@@ -53,15 +55,41 @@ def get_client_id(msisdn):
         return None
 
 def dial_begin(uniqueid, caller, callee, start, call_status):
-    logger.info(f'DialBegin, start processing, call: {call}')
     caller_id = get_client_id(caller)
-    call = {'uniqueid': uniqueid, 'start': start, 'end': None, 'caller': caller, 'callee': callee, 'caller_id': caller_id, 'callee_id': None, 'call_status': call_status}    
+    call = {'uniqueid': uniqueid,
+            'start': start, 
+            'end': None, 
+            'caller': caller, 
+            'callee': callee, 
+            'caller_id': caller_id, 
+            'callee_id': None, 
+            'call_status': call_status, 
+            'record_file': None, 
+            'record_file_in': None, 
+            'record_file_out': None}    
+    logger.info(f'DialBegin, start processing, call: {call}')    
     redis_set(uniqueid, call)
     logger.info(f'DialBegin processed, call stored in redis: {call}')
 
-def dial_end(uniqueid, call_status):
-    logger.info(f'DialEnd, start processing, call: {call}')
+def varset(uniqueid, record_file):
     call = redis_get(uniqueid)
+    logger.info(f'VarSet, start processing, call: {call}, record_file: {record_file}')  
+    if call is not None:
+        record_file =  record_file.replace("/var/spool/asterisk/monitor", "")
+        name, ext = os.path.splitext(record_file)
+        record_file_in =  f"{name}-in{ext}"
+        record_file_out =  f"{name}-out{ext}"
+        call['record_file'] = record_file  
+        call['record_file_in'] = record_file_in 
+        call['record_file_out'] = record_file_out 
+        redis_set(uniqueid, call)
+        logger.info(f'VarSet processed, call stored in redis: {call}')  
+    else:
+        logger.error(f'VarSet processed, redis have`t key: {uniqueid}, call: {call}')        
+
+def dial_end(uniqueid, call_status):
+    call = redis_get(uniqueid)
+    logger.info(f'DialEnd, start processing, call: {call}')    
     if call is not None:
         call['call_status'] = call_status
         redis_set(uniqueid, call)
@@ -75,13 +103,14 @@ def hangup(uniqueid, end):
     if call is not None:
         if call['call_status'] == 'ANSWER':
             call['end'] = end
+        redis_set(uniqueid, call)
         store_to_queue(call)
         logger.info(f'HangUp processed, call stored in queue: {call}')
     else:
         logger.error(f'HangUp processed, redis have`t key: {uniqueid}')
 
 def store_to_queue(call,**kwargs):
-    with pika.BlockingConnection(pika.ConnectionParameters(rabbit_host, port=rabbit_port)) as connection:
+    with pika.BlockingConnection(pika.ConnectionParameters(RABBIT_HOST, port=RABBIT_PORT)) as connection:
         channel = connection.channel()    
         channel.queue_declare(queue='calls')
         channel.basic_publish(exchange='',
@@ -117,19 +146,28 @@ def event_parse_and_route(body):
         uniqueid = event['params']['Linkedid']
         end = datetime.now().isoformat() #.strftime('%Y-%m-%d %H:%M:%S')   
         hangup(uniqueid, end)
+
+    elif event['event'] == 'VarSet' and event['params']['Variable'] == 'MIXMONITOR_FILENAME':
+        # запись аудео файла
+        uniqueid = event['params']['Linkedid']
+        record_file = event['params']['Value']
+        varset(uniqueid, record_file)    
     
-    else:
-        logger.info(f'Unknow event: {body}')
+    #else:
+    #    logger.info(f'Unknow event: {body}')
 
 def callback(ch, method, properties, body):    
-    logger.info(f'Received new event: {body}')
+    #logger.info(f'Received new event: {body}')
     event_parse_and_route(body)
         
 def run():
-    with pika.BlockingConnection(pika.ConnectionParameters(host=rabbit_host)) as connection:
+    with pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST)) as connection:
         channel = connection.channel()
-        channel.queue_declare(queue='events')   
-        channel.basic_consume(queue='events', auto_ack=True, on_message_callback=callback)
+        channel.exchange_declare(exchange=RABBIT_EVENTS_EXCHANGE, exchange_type='fanout')
+        result = channel.queue_declare(queue=RABBIT_EVENTS_QUEUE, exclusive=True)
+        queue_name = result.method.queue
+        channel.queue_bind(exchange=RABBIT_EVENTS_EXCHANGE, queue=queue_name)
+        channel.basic_consume(queue=queue_name, auto_ack=True, on_message_callback=callback)
         logger.info('[*] Waiting for messages. To exit press CTRL+C')
         channel.start_consuming()
 

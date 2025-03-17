@@ -5,15 +5,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-log_level = os.environ.get('LOG_LEVEL', 'INFO')
-rabbit_host = os.environ.get('RABBIT_HOST', '0.0.0.0')
-rabbit_port = int(os.environ.get('RABBIT_PORT', '5672'))
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
+RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
 
-logging.basicConfig(level=log_level)
+logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger('app_db')
         
 def run():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbit_host, port=rabbit_port))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST, port=RABBIT_PORT))
     channel = connection.channel()
     channel.queue_declare(queue='calls')   
     channel.basic_consume(queue='calls', auto_ack=False, on_message_callback=callback)
@@ -25,19 +25,24 @@ def callback(ch, method, properties, body):
     result = store_to_db(body)
     if result:
         ch.basic_ack(delivery_tag = method.delivery_tag)
+    else:
+        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)        
 
 def store_to_db(body):
     with db.connect() as conn:
         call = json.loads(body)   
         ins = table_calls.insert().values(
-            id = 1,
+            #id = 1,
             caller = call.get('caller'),
             callee = call.get('callee'),
             caller_id = call.get('caller_id'),
             callee_id = call.get('callee_id'),
             call_start = datetime.fromisoformat(call.get('start')),
             call_end = datetime.fromisoformat(call.get('end')) if call.get('end') is not None else None,
-            call_status  = call.get('call_status')
+            call_status  = call.get('call_status'),
+            record_file  = call.get('record_file'),
+            record_file_in  = call.get('record_file_in'),
+            record_file_out  = call.get('record_file_out')
         )
         try:
             conn.execute(ins)
