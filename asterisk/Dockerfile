@@ -24,10 +24,7 @@ ADD queue_operators.conf etc/asterisk/queue_operators.conf
 ADD members_operators.conf etc/asterisk/members_operators.conf
 ADD http.conf /etc/asterisk/http.conf
 
-#RUN apk add --update tcpdump && rm -rf /var/cache/apk/*
-#RUN apk add busybox-extras
-
-#ENV EXTERNADDR=192.168.1.107
-#ENV LOCALNET=192.168.0.0/255.255.0.0
+RUN apk add sox
+RUN apk add --update tcpdump && rm -rf /var/cache/apk/*
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
