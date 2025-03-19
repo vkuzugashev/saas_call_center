@@ -51,6 +51,41 @@ except pymysql.err.OperationalError as e:
     logger.error(f"Ошибка подключения к базе данных: {e}")
     exit(1)
 
+
+def process_dialogue(dialogue_data):
+    channels = dialogue_data['response']['chunks']
+    dialog_parts = []  # Список для хранения всех реплик
+
+    # Парсим данные по каналам и добавляем в общий список
+    for chunk in channels:
+        channel_tag = chunk['channelTag']
+        alternatives = chunk['alternatives'][0]  # Берём первую альтернативу
+        words = alternatives['words']
+        text = alternatives['text']
+
+        # Собираем слова по времени
+        words.sort(key=lambda x: float(x['startTime'].strip('s')))  # Сортируем слова по времени
+        channel_words = [word['word'] for word in words]
+        full_text = ' '.join(channel_words)
+
+        # Добавляем в список с указанием канала и времени начала
+        start_time = float(words[0]['startTime'].strip('s'))
+        dialog_parts.append({
+            'channel': channel_tag,
+            'time': start_time,
+            'text': full_text
+        })
+
+    # Сортируем по времени
+    dialog_parts.sort(key=lambda x: x['time'])
+
+    # Формируем итоговый диалог
+    formatted_dialogue = ""
+    for part in dialog_parts:
+        formatted_dialogue += f"[{part['channel']}]: {part['text']}\n"
+
+    return formatted_dialogue
+
 # Функция для проверки статуса задания
 def check_transcription_status(transcription_id):
     url = f'{SPEECH_API_ENDPOINT}/{transcription_id}'
@@ -69,13 +104,13 @@ def check_transcription_status(transcription_id):
         return {}
 
 # Функция для обновления статуса транскрибации в базе данных
-def update_transcription_status(transcription_id, status, result):
-    json_text = json.dumps(result)
+def update_transcription_status(transcription_id, status, result, dialog):
+    response = json.dumps(result)
     cursor.execute("""
         UPDATE calls
-        SET transcription = %s, transcription_status = %s
+        SET transcription = %s, transcription_status = %s, dialog = %s
         WHERE transcription_id = %s
-    """, (json_text, status, transcription_id))
+    """, (response, status, dialog, transcription_id))
     connection.commit()
 
 # Функция для периодической проверки статуса транскрибации
@@ -103,7 +138,8 @@ def poll_and_update_transcriptions():
                 logger.info("Транскрибация завершена!")
                 # Обновляем запись в базе данных
                 #result = response.get('response')
-                update_transcription_status(transcription_id, 1, response)
+                dialog = process_dialogue(response)
+                update_transcription_status(transcription_id, 1, response, dialog)
             elif status and error is not None:
                 #result = response.get('error')
                 logger.error("Возникла ошибка при выполнении транскрибации.")

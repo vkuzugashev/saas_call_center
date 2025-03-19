@@ -26,7 +26,8 @@ table_calls = Table('calls', metadata,
     Column('record_file', String(255), nullable=True),
     Column('transcription_id', String(255), nullable=True),
     Column('transcription_status', Integer, nullable=False, default=0),
-    Column('transcription', Text, nullable=True)
+    Column('transcription', Text, nullable=True),
+    Column('dialog', Text, nullable=True)
 )
 
 if __name__ == '__main__':
