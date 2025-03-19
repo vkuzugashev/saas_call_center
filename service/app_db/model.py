@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, MetaData, Table, String, Integer, Column, DateTime
+from sqlalchemy import create_engine, MetaData, Table, String, Integer, Column, DateTime, Text
 
 load_dotenv()
 
@@ -24,12 +24,12 @@ table_calls = Table('calls', metadata,
     Column('call_end', DateTime, nullable=True),
     Column('call_status', String(50), nullable=True),
     Column('record_file', String(255), nullable=True),
-    Column('record_file_in', String(255), nullable=True),
-    Column('record_file_out', String(255), nullable=True),
-    Column('transcription', String(1000), nullable=True)
+    Column('transcription_id', String(255), nullable=True),
+    Column('transcription_status', Integer, nullable=False, default=0),
+    Column('transcription', Text, nullable=True)
 )
 
 if __name__ == '__main__':
-    #metadata.drop_all(db)
+    metadata.drop_all(db)
     metadata.create_all(db)
     print('Database schema created.')

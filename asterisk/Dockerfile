@@ -27,4 +27,7 @@ ADD http.conf /etc/asterisk/http.conf
 RUN apk add sox
 RUN apk add --update tcpdump && rm -rf /var/cache/apk/*
 
+WORKDIR /var/lib/asterisk/static-http
+RUN ln -s /var/spool/asterisk/monitor/ monitor
+
 ENTRYPOINT ["/docker-entrypoint.sh"]

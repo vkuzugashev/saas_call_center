@@ -10,7 +10,7 @@ RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
 RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
 
 logging.basicConfig(level=LOG_LEVEL)
-logger = logging.getLogger('app_db')
+logger = logging.getLogger(__name__)
         
 def run():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST, port=RABBIT_PORT))
@@ -32,7 +32,6 @@ def store_to_db(body):
     with db.connect() as conn:
         call = json.loads(body)   
         ins = table_calls.insert().values(
-            #id = 1,
             caller = call.get('caller'),
             callee = call.get('callee'),
             caller_id = call.get('caller_id'),
@@ -41,8 +40,7 @@ def store_to_db(body):
             call_end = datetime.fromisoformat(call.get('end')) if call.get('end') is not None else None,
             call_status  = call.get('call_status'),
             record_file  = call.get('record_file'),
-            record_file_in  = call.get('record_file_in'),
-            record_file_out  = call.get('record_file_out')
+            transcription_status  = 0
         )
         try:
             conn.execute(ins)

@@ -10,12 +10,12 @@ RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
 RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
-CLIENT_URL = os.environ.get('CLIENT_URL', None)
+CLIENT_URL = os.environ.get('CLIENT_URL', "")
 RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE', 'events')
 RABBIT_EVENTS_QUEUE = os.environ.get('RABBIT_EVENTS_QUEUE', 'events')
 
 logging.basicConfig(level=LOG_LEVEL)
-logger = logging.getLogger('app_call')
+logger = logging.getLogger(__name__)
 
 def uniqueid_to_timestamp(uniqueid):
     ts = int(re.search('\d{10}', uniqueid)[0])
@@ -41,7 +41,7 @@ def redis_set(key, value):
     logger.debug(f'Stored in redis: {key} -> {str_call}')
     
 def get_client_id(msisdn):
-    if CLIENT_URL is not None:
+    if CLIENT_URL != "":
         response = requests.get(f'{CLIENT_URL}/{msisdn}')
         content = response.content
         if response.status_code == 200:
@@ -64,9 +64,7 @@ def dial_begin(uniqueid, caller, callee, start, call_status):
             'caller_id': caller_id, 
             'callee_id': None, 
             'call_status': call_status, 
-            'record_file': None, 
-            'record_file_in': None, 
-            'record_file_out': None}    
+            'record_file': None}    
     logger.info(f'DialBegin, start processing, call: {call}')    
     redis_set(uniqueid, call)
     logger.info(f'DialBegin processed, call stored in redis: {call}')
@@ -76,12 +74,7 @@ def varset(uniqueid, record_file):
     logger.info(f'VarSet, start processing, call: {call}, record_file: {record_file}')  
     if call is not None:
         record_file =  record_file.replace("/var/spool/asterisk/monitor", "")
-        name, ext = os.path.splitext(record_file)
-        record_file_in =  f"{name}-in{ext}"
-        record_file_out =  f"{name}-out{ext}"
         call['record_file'] = record_file  
-        call['record_file_in'] = record_file_in 
-        call['record_file_out'] = record_file_out 
         redis_set(uniqueid, call)
         logger.info(f'VarSet processed, call stored in redis: {call}')  
     else:
@@ -128,7 +121,9 @@ def event_parse_and_route(body):
         # начало дозвона
         uniqueid = event['params']['Uniqueid']        
         caller = event['params']['CallerIDNum']
-        callee = event['params']['DestCallerIDNum']
+        callee = event['params']['DialString']
+        # удалим префикс
+        callee = callee.replace("PJSIP/","")
         # todo сделать конвертацию в timestamp с милисекундами, сейчас мы их отбрасываем
         ts = uniqueid_to_timestamp(uniqueid)
         start = datetime.fromtimestamp(ts).isoformat()  #.strftime('%Y-%m-%d %H:%M:%S')     
@@ -143,19 +138,16 @@ def event_parse_and_route(body):
                 
     elif event['event'] == 'Hangup':
         # Конц вызова абонент повешал трубку
-        uniqueid = event['params']['Linkedid']
+        uniqueid = event['params']['Uniqueid']
         end = datetime.now().isoformat() #.strftime('%Y-%m-%d %H:%M:%S')   
         hangup(uniqueid, end)
 
-    elif event['event'] == 'VarSet' and event['params']['Variable'] == 'MIXMONITOR_FILENAME':
+    elif event['event'] == 'VarSet' and event['params']['Variable'] == 'MIXMONITOR_FILENAME_SOX':
         # запись аудео файла
         uniqueid = event['params']['Linkedid']
         record_file = event['params']['Value']
         varset(uniqueid, record_file)    
     
-    #else:
-    #    logger.info(f'Unknow event: {body}')
-
 def callback(ch, method, properties, body):    
     #logger.info(f'Received new event: {body}')
     event_parse_and_route(body)

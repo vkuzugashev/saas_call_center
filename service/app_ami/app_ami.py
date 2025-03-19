@@ -15,7 +15,7 @@ RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
 RABBIT_EVENTS_ECHANGE = os.environ.get('RABBIT_EVENTS_ECHANGE', 'events')
 
 logging.basicConfig(level=LOG_LEVEL)
-logger = logging.getLogger('app_ami')
+logger = logging.getLogger(__name__)
 
 def event_listener(event, **kwargs):
     logger.info(f"Принято событие: {event.name}, параметры: {event.keys}")

@@ -16,7 +16,7 @@ AMQP_URL = f'amqp://{RABBIT_HOST}/'
 LAST_ACTIVITY_TIMEOUT = 30  # Время неактивности в секундах
 
 logging.basicConfig(level=LOG_LEVEL)
-logger = logging.getLogger('app_new_call')
+logger = logging.getLogger(__name__)
 
 clients = set()
 lock = asyncio.Lock()

@@ -30,6 +30,7 @@ def run_container(container_name, image_name):
             '-p', '5060:5060/udp',
             '-p', '5038:5038',
             '-p', '10000-10100:10000-10100/udp',
+            '-p', '8088:8088',
             '-d',  # detached mode
             '-t',  # allocate a pseudo-TTY
             image_name
@@ -41,6 +42,7 @@ def run_container(container_name, image_name):
             '-p', '5060:5060/udp',
             '-p', '5038:5038',
             '-p', '10000-10100:10000-10100/udp',
+            '-p', '8088:8088',
             '-d',  # detached mode
             '-t',  # allocate a pseudo-TTY
             image_name
