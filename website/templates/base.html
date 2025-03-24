@@ -28,13 +28,18 @@
              id="navbarNav">
             <ul class="nav justify-content-end">
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="/">Главная</a>
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" aria-current="page" href="/">Главная</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/history">История звонков</a>
+                    <a class="nav-link {% if request.path == '/history' %}active{% endif %}" href="/history">История звонков</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Настройки</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Настройки</a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="/users">Абоненты</a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
         </div>

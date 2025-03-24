@@ -1,0 +1,14 @@
+<!-- templates/user_delete_confirm.html -->
+{% extends "base.html" %}
+
+{% block title %}Подтверждение удаления пользователя{% endblock %}
+
+{% block content %}
+<h1>Подтверждение удаления пользователя</h1>
+<p>Вы действительно хотите удалить пользователя "{{ user.username }}"?</p>
+
+<form method="POST">
+    <button type="submit" class="btn btn-danger">Да, удалить</button>
+    <a href="{{ url_for('show_users') }}" class="btn btn-secondary">Нет, вернуться</a>
+</form>
+{% endblock %}
