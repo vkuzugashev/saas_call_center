@@ -4,135 +4,97 @@
 
 {% block content %}
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='table.css') }}">
-
-    <!-- <script src="../instance/imask.css"></script>
-    <script src="../instance/imask.js"></script> -->
-
-    <h1 class="mb-5">История звонков</h1>
-
-    Время звонка:
-        
-        <table style="width:30%" class="table">
-            <tr>
-                <th>
-                    <div class="col">
-                        <input type="text" id="from" name="fromdt" class="form-control" value="{{fromdt}}"/>
-                    </div>
-                </th>
-                <th>
-                    <div class="col">
-                        <input type="text" id="to" name="todt" class="form-control"  value="{{todt}}"/>
-                    </div>
-                </th>
-                <th>
-                    <div class="col" class="text-center">
-                        <button id="btn_find" type="button" class="btn btn-primary">Найти</button>
-                    </div>
-                </th>
-            </tr>
-        </table>
-    
-
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">id</th>
-                    <th scope="col">номер звонящего</th>
-                    <th scope="col">номер вызываемого</th>
-                    <th scope="col">клиент</th>
-                    <th scope="col">время звонка</th>
-                    <th scope="col">время конца звонка</th>
-                    <th scope="col">статус звонка</th>
-                    <th scope="col">аудио запись</th>
-                    <th scope="col">перевод</th>
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for row in data %}
-                    <tr>        
-                        <td  scope="row">{{row.id}}</td>
-                        <td>{{row.caller}}</td>
-                        <td>{{row.callee}}</td>
-                        <td>{{row.caller_id}}</td>
-                        <td>{{row.call_start}}</td>
-                        <td>{{row.call_end}}</td>
-                        <td>{{row.call_status}}</td>
-                        <td><a href="http://localhost:8088/static/monitor{{row.record_file}}" target="_blank" >Запись</a></td>
-                        <td></td>
-                    </tr>                
-                {% endfor %}
-            </tbody>
-        </table>        
-   
-
-    <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center">
-          <li class="page-item">
-            <a class="page-link" href="/history/{{fromdt}}/{{todt}}/{{page_index-1}}" aria-label="Previous">
-              <span aria-hidden="true">&laquo;</span>
-            </a>
-          </li>
-          {% for i in range(1, total_pages + 1) %}
-          <li class="page-item"><a class="page-link" href="/history/{{fromdt}}/{{todt}}/{{i}}">{{i}}</a></li>
-          {% endfor %}
-          <li class="page-item">
-            <a class="page-link" href="/history/{{fromdt}}/{{todt}}/{{page_index+1}}" aria-label="Next">
-              <span aria-hidden="true">&raquo;</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
-
-{% endblock %}
-
-{% block script %}
-<script>
-    $(document).ready(function(){
-        $.datepicker.setDefaults({
-            dateFormat: 'yy-mm-dd'
-        });
-        $(function(){
-            $("#from").datepicker();
-            $("#to").datepicker();
-        });
-        // $('#range').click(function(){
-        //     var From = $('#From').val();
-        //     var to = $('#to').val();
-        //     if(From != '' && to != '')
-        //     {
-        //         $.ajax({
-        //             url:"/range",
-        //             method:"POST",
-        //             data:{From:From, to:to},
-        //             success:function(data)
-        //             {
-        //                 $('#purchase_order').html(data);
-        //                 $('#purchase_order').append(data.htmlresponse);
-        //             }
-        //         });
-        //     }
-        //     else
-        //     {
-        //         alert("Please Select the Date");
-        //     }
-        // });
-    });
-    
-    $("#btn_find").on("click", function(e){
-        e.preventDefault();
-        window.location.replace(`/history/${$('#from').val()}/${$('#to').val()}/1`)
-    });
-
-    //$.get( "ajax/test.html", function( data ) {
-    //$( ".result" ).html( data );
-    //alert( "Load was performed." );
-    //});
-
-    function on_submit(){
-        $('#form1').a
-        $('#form1').submit();
+<style>
+    /* Стилизация таблицы */
+    table {
+        width: 100%;
+        border-collapse: collapse;
     }
-    </script>
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    tr:hover {background-color: #f5f5f5;}
+</style>
+
+<h1>История звонков</h1>
+
+<!-- Фильтр по дате -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <form method="GET" action="{{ url_for('history') }}">
+                <div class="row gx-2 align-items-center">
+                    <div class="col-auto">
+                        <label for="fromdt" class="col-form-label">От:</label>
+                    </div>
+                    <div class="col-auto">
+                        <input type="date" id="fromdt" name="fromdt" value="{{ fromdt }}" class="form-control" required>
+                    </div>
+                    <div class="col-auto">
+                        <label for="todt" class="col-form-label">До:</label>
+                    </div>
+                    <div class="col-auto">
+                        <input type="date" id="todt" name="todt" value="{{ todt }}" class="form-control" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Применить</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<!-- Таблица с историей звонков -->
+<table  class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Номер звонящего</th>
+            <th scope="col">Номер вызываемого</th>
+            <th scope="col">Клиент</th>
+            <th scope="col">Время звонка</th>
+            <th scope="col">Время окончания</th>
+            <th scope="col">Статус звонка</th>
+            <th scope="col">Аудио запись</th>
+            <th scope="col">Перевод</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for call in pagination.items %}
+        <tr>
+            <td>{{ call.id }}</td>
+            <td>{{ call.caller }}</td>
+            <td>{{ call.callee }}</td>
+            <td>{{ call.client }}</td>
+            <td>{{ call.call_start }}</td>
+            <td>{{ call.call_end }}</td>
+            <td>{{ call.status }}</td>
+            <td><a href="/static/{{ call.record_file }}" target="_blank">Прослушать</a></td>
+            <td>{{ call.translation }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!--Пагинация -->
+<nav aria-label="Страницы">
+    <ul class="pagination">
+        <!-- Первая страница -->
+        <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('history', fromdt=fromdt, todt=todt, page=pagination.prev()) }}">«</a>
+        </li>
+        <!-- Нумерация страниц -->
+        {% for page_num in pagination.iter_pages() %}
+        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('history', fromdt=fromdt, todt=todt, page=page_num) }}">{{ page_num }}</a>
+        </li>
+        {% endfor %}
+        <!-- Последняя страница -->
+        <li class="page-item {% if pagination.page == pagination.last_page %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('history', fromdt=fromdt, todt=todt, page=pagination.next()) }}">»</a>
+        </li>
+</ul>
+</nav>
 
 {% endblock %}

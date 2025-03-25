@@ -31,6 +31,10 @@ class Calls(db.Model):
     call_end = db.Column(db.DateTime, nullable=True)
     call_status = db.Column(db.String(12), nullable=False)
     record_file = db.Column(db.String(255), nullable=True)
-
+    transcription_id = db.Column(db.String(255), nullable=True)
+    transcription_status = db.Column(db.Integer, nullable=False, default=0)
+    transcription = db.Column(db.Text, nullable=True)
+    dialog = db.Column(db.Text, nullable=True)
+    
     def __repr__(self):
         return f'<Call {self.caller} -> {self.callee}>'

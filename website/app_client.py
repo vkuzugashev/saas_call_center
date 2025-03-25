@@ -2,13 +2,12 @@ import os
 from dotenv import load_dotenv
 import logging
 from flask import (
-    Flask, render_template, request, redirect, url_for, flash, jsonify
+    Flask, render_template, request, redirect, url_for, flash
 )
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager, login_user, logout_user, current_user, login_required
 )
-from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import desc
 
 # Импортируем модели из models.py
 from models import User, Calls, db
@@ -113,20 +112,50 @@ def register():
     return render_template('register.html')
 
 
-@app.route('/calls/history', defaults={'page': 1})
-@app.route('/calls/history/page/<int:page>')
+from datetime import datetime, timedelta
+import re
+
+@app.route('/calls/history')
 @login_required
-def history(page):
-    calls_per_page = 10
-    pagination = Calls.query.order_by(Calls.call_start.desc()).paginate(
-        page, per_page=calls_per_page, error_out=False
-    )
-    calls = pagination.items
-    return render_template(
-        'call_history.html',
-        calls=calls,
-        pagination=pagination
-    )
+def history():
+    # Установка значений by default
+    date_time_format = '%Y-%m-%d'   # формат DD.MM.YY
+    limit = 10
+    today = datetime.now().strftime(date_time_format)  # Текущая дата в формате DD.MM.YYYY
+    page = request.args.get('page', 1)
+    fromdt = request.args.get('fromdt', today)
+    todt = request.args.get('todt', today)
+
+    # Преобразование строковых значений в объекты datetime
+    try:
+        from_date = datetime.strptime(fromdt, date_time_format)
+        to_date = datetime.strptime(todt, date_time_format) + timedelta(days=1)
+        
+    except ValueError:
+        # Если дата некорректна, возвращаем ошибку
+        flash(f'Некорректный формат даты. Должен быть YYYY-MM-DD.')
+        return redirect(url_for('history'))
+
+    # Определяем базовый запрос
+    base_query = Calls.query.order_by(desc(Calls.call_start))
+
+    # Применяем фильтры по дате
+    if from_date:
+        base_query = base_query.filter(Calls.call_start >= from_date)
+    if to_date:
+        base_query = base_query.filter(Calls.call_start <= to_date)
+  
+    # Извлекаем записи для текущей страницы
+    paginate = base_query.paginate(page=page, per_page=limit, error_out=False)
+
+    # Формируем контекст для рендеринга
+    context = {
+        'pagination': paginate,
+        'fromdt': fromdt,
+        'todt': todt
+    }
+
+    return render_template('history.html', **context)
 
 
 @app.route('/users')
