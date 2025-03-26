@@ -92,8 +92,8 @@
 <nav aria-label="Страницы">
     <ul class="pagination">
         <!-- Первая страница -->
-        <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('calls_log', fromdt=fromdt, todt=todt, page=pagination.prev()) }}">«</a>
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('calls_log', fromdt=fromdt, todt=todt, page=pagination.prev_num) }}">«</a>
         </li>
         <!-- Нумерация страниц -->
         {% for page_num in pagination.iter_pages() %}
@@ -102,8 +102,8 @@
         </li>
         {% endfor %}
         <!-- Последняя страница -->
-        <li class="page-item {% if pagination.page == pagination.last_page %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('calls_log', fromdt=fromdt, todt=todt, page=pagination.next()) }}">»</a>
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('calls_log', fromdt=fromdt, todt=todt, page=pagination.next_num) }}">»</a>
         </li>
 </ul>
 </nav>
