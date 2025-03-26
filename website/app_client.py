@@ -144,7 +144,7 @@ def calls_log():
     date_time_format = '%Y-%m-%d'   # формат DD.MM.YY
     limit = 10
     today = datetime.now().strftime(date_time_format)  # Текущая дата в формате DD.MM.YYYY
-    page = request.args.get('page', 1)
+    page = int(request.args.get('page', 1))
     fromdt = request.args.get('fromdt', today)
     todt = request.args.get('todt', today)
 
