@@ -2,12 +2,14 @@ import os
 from dotenv import load_dotenv
 import logging
 from flask import (
-    Flask, render_template, request, redirect, url_for, flash
+    Flask, request, render_template, redirect, url_for, flash, send_file, abort
 )
 from flask_login import (
-    LoginManager, login_user, logout_user, current_user, login_required
+    LoginManager, login_user, logout_user, login_required
 )
 from sqlalchemy import desc
+import requests
+from datetime import datetime, timedelta
 
 # Импортируем модели из models.py
 from models import User, Calls, db
@@ -26,6 +28,9 @@ DB_PORT = int(os.getenv('DB_PORT'))  # Порт преобразуем в цел
 DB_USERNAME = os.getenv('DB_USERNAME')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_NAME = os.getenv('DB_NAME')
+
+# Url для загрузки файла записи
+RECORD_URL = os.getenv('RECORD_URL')
 
 # Формируем URI для SQLAlchemy
 SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4'
@@ -72,7 +77,6 @@ def login():
 
     return render_template('login.html')
 
-
 @app.route('/logout')
 @login_required
 def logout():
@@ -112,12 +116,30 @@ def register():
     return render_template('register.html')
 
 
-from datetime import datetime, timedelta
-import re
+@app.route("/record/<int:id>")
+def get_record_file(id):
+    # Получаем звонок
+    call = Calls.query.get_or_404(id)
+    
+    if call.record_file:
+        file_url = RECORD_URL+'/'+call.record_file
+    
+        # Загрузка файла по ссылке
+        response = requests.get(file_url, stream=True)
+    
+        # Проверяем успешность загрузки
+        if response.status_code == 200:
+            # Передача файла клиенту
+            filename = os.base(file_url)
+            return send_file(response.raw, attachment_filename=filename, as_attachment=True)
+        else:
+            return f"Не удалось загрузить файл. Код статуса: {response.status_code}", 500
+    else:
+        abort(404)
 
-@app.route('/calls/history')
+@app.route('/calls/log')
 @login_required
-def history():
+def calls_log():
     # Установка значений by default
     date_time_format = '%Y-%m-%d'   # формат DD.MM.YY
     limit = 10
@@ -134,7 +156,7 @@ def history():
     except ValueError:
         # Если дата некорректна, возвращаем ошибку
         flash(f'Некорректный формат даты. Должен быть YYYY-MM-DD.')
-        return redirect(url_for('history'))
+        return redirect(url_for('calls_log'))
 
     # Определяем базовый запрос
     base_query = Calls.query.order_by(desc(Calls.call_start))
@@ -155,7 +177,7 @@ def history():
         'todt': todt
     }
 
-    return render_template('history.html', **context)
+    return render_template('calls_log.html', **context)
 
 
 @app.route('/users')
