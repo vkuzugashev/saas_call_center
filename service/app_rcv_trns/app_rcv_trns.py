@@ -130,8 +130,7 @@ def poll_and_update_transcriptions():
 
             # Получаем результат транскрибации
             response = check_transcription_status(transcription_id)
-            body = json.dumps(response)
-            logger.debug('Получен ответ:', body)
+            logger.debug(f'Получен ответ: {response}')
             status = response.get('done', False)
             error = response.get('error', None)
             if status and error is None:
