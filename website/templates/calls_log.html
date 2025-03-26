@@ -50,11 +50,11 @@
     <thead>
         <tr>
             <th scope="col">ID</th>
+            <th scope="col">Время звонка</th>
+            <th scope="col">Время окончания</th>
             <th scope="col">Номер звонящего</th>
             <th scope="col">Номер вызываемого</th>
             <th scope="col">Клиент</th>
-            <th scope="col">Время звонка</th>
-            <th scope="col">Время окончания</th>
             <th scope="col">Статус звонка</th>
             <th scope="col">Аудио запись</th>
             <th scope="col">Диалог</th>
@@ -64,14 +64,25 @@
         {% for call in pagination.items %}
         <tr>
             <td>{{ call.id }}</td>
+            <td>{{ call.call_start }}</td>
+            <td>{{ call.call_end }}</td>
             <td>{{ call.caller }}</td>
             <td>{{ call.callee }}</td>
             <td>{{ call.caller_id }}</td>
-            <td>{{ call.call_start }}</td>
-            <td>{{ call.call_end }}</td>
             <td>{{ call.call_status }}</td>
-            <td><a href="{{ url_for('get_record_file', id=call.id) }}" target="_blank">Прослушать</a></td>
-            <td>{{ call.dialog }}</td>
+            <td>
+                {% if call.record_file %}
+                <a href="{{ url_for('get_record_file', id=call.id) }}" target="_blank">Запись</a>
+                {% endif %}
+            </td>
+            <td>
+                {% if call.dialog %}
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#dialogModal" data-bs-whatever="dialog{{call.id}}">
+                    Показать
+                </button>
+                <div id="dialog{{call.id}}" style="display: none">{{ call.dialog }}</div>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -99,20 +110,18 @@
 
 
 <!-- Модальное окно для перевода -->
-<div class="modal fade" id="translationModal" tabindex="-1" role="dialog" aria-labelledby="translationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+<div class="modal fade" id="dialogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="translationModalLabel">Перевод</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
+                <h5 class="modal-title" id="dialogModalLabel">Диалог</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p id="translationText"></p>
+                <span id="dialogText" style="white-space: pre-line"></span>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
             </div>
         </div>
     </div>
@@ -121,17 +130,22 @@
 
 {% block script %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const translationCells = document.querySelectorAll('td:nth-child(9)');
+    const dialogModal = document.getElementById('dialogModal')
+    if (dialogModal) {
+        dialogModal.addEventListener('show.bs.modal', event => {
+            // Button that triggered the modal
+            const button = event.relatedTarget
+            // Extract info from data-bs-* attributes
+            const dialogId = button.getAttribute('data-bs-whatever')
+            // If necessary, you could initiate an Ajax request here
+            // and then do the updating in a callback.
+            const dialogText = document.getElementById(dialogId)
 
-        translationCells.forEach(function(cell) {
-            cell.addEventListener('click', function(event) {
-                let translationText = this.textContent.trim();
-                let modalBody = document.getElementById('translationText');
-                modalBody.innerText = translationText;
-                $('#translationModal').modal('show');
-            });
-        });
-    });
+            // Update the modal's content.
+            const modalBodyText = dialogModal.querySelector('.modal-body #dialogText')
+
+            modalBodyText.innerHTML = dialogText.innerHTML
+        })
+    }
 </script>
 {% endblock %}

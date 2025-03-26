@@ -7,7 +7,6 @@ from flask import (
 from flask_login import (
     LoginManager, login_user, logout_user, login_required
 )
-from sqlalchemy import desc
 import requests
 from datetime import datetime, timedelta
 
@@ -123,15 +122,16 @@ def get_record_file(id):
     
     if call.record_file:
         file_url = RECORD_URL+'/'+call.record_file
-    
+        logger.debug(f'Начало загрузки файла: {file_url}')
         # Загрузка файла по ссылке
         response = requests.get(file_url, stream=True)
     
         # Проверяем успешность загрузки
         if response.status_code == 200:
             # Передача файла клиенту
-            filename = os.base(file_url)
-            return send_file(response.raw, attachment_filename=filename, as_attachment=True)
+            filename = os.path.basename(file_url)
+            logger.debug(f'Загружен файл: {filename}')
+            return send_file(response.raw, download_name=filename, as_attachment=True)
         else:
             return f"Не удалось загрузить файл. Код статуса: {response.status_code}", 500
     else:
@@ -159,7 +159,7 @@ def calls_log():
         return redirect(url_for('calls_log'))
 
     # Определяем базовый запрос
-    base_query = Calls.query.order_by(desc(Calls.call_start))
+    base_query = Calls.query.order_by(Calls.call_start)
 
     # Применяем фильтры по дате
     if from_date:
