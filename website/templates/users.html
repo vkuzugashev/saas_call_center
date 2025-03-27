@@ -20,8 +20,19 @@
             <span class="input-group-text">Фильтр по отделу</span>
         </div>
     </form>
-
-    <a href="/users/new" class="btn btn-success">Добавить нового пользователя</a>
+    <div class="d-flex">
+        <div class="col">
+            <a href="{{ url_for('create_user') }}" class="btn btn-success mr-2">Добавить нового пользователя</a>
+        </div>
+        <div>&nbsp</div>
+        <div class="col-*">
+            <a href="{{ url_for('users_upload_csv') }}" class="btn btn-info">Загрузить CSV-файл</a>
+        </div>        
+        <div>&nbsp</div>
+        <div class="col-*">
+            <a href="{{ url_for('users_export_csv') }}" class="btn btn-info">Выгрузить CSV-файл</a>
+        </div>        
+    </div>
 </div>
 
 <table class="table table-striped">

@@ -2,13 +2,16 @@ import os
 from dotenv import load_dotenv
 import logging
 from flask import (
-    Flask, request, render_template, redirect, url_for, flash, send_file, abort
+    Flask, request, render_template, redirect, url_for, flash, send_file, abort,  make_response
 )
 from flask_login import (
     LoginManager, login_user, logout_user, login_required
 )
 import requests
 from datetime import datetime, timedelta
+import csv
+from io import StringIO
+import tempfile
 
 # Импортируем модели из models.py
 from models import User, Calls, db
@@ -44,7 +47,6 @@ db.init_app(app)
 # Инициализируем LoginManager
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
-
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -270,6 +272,120 @@ def delete_user(id):
             flash(f'Произошла ошибка при удалении пользователя: {e}', 'error')
             logger.error(f'Error deleting user with id={id}: {e}')
     return render_template('user_delete_confirm.html', user=user)
+
+@app.route('/users/export_csv')
+def users_export_csv():
+    # Получаем всех пользователей
+    users = User.query.all()
+    
+    # Создаем строку для хранения CSV-данных
+    si = StringIO()
+    cw = csv.writer(si)
+    
+    # Заголовки столбцов
+    cw.writerow(['ID', 'Отдел', 'Имя пользователя', 'ФИО', 'Телефон', 'Пароль'])
+    
+    # Заполняем строки данными
+    for user in users:
+        cw.writerow([user.id, user.department, user.username, user.fio, user.phone, None])
+    
+    # Преобразуем содержимое StringIO в байты
+    output = make_response(si.getvalue())
+    
+    # Устанавливаем заголовок Content-Disposition для скачивания файла
+    output.headers["Content-Disposition"] = "attachment; filename=users.csv"
+    output.headers["Content-type"] = "text/csv"
+    
+    return output
+
+@app.route('/users/upload_csv', methods=['GET', 'POST'])
+def users_upload_csv():
+    if request.method == 'POST':
+        # Проверяем, есть ли файл в запросе
+        if 'file' not in request.files:
+            flash('Нет файла для загрузки')
+            return redirect(request.url)
+        
+        file = request.files['file']
+
+        # Если пользователь не выбрал файл
+        if file.filename == '':
+            flash('Не выбран файл')
+            return redirect(request.url)      
+
+        # Проверяем расширение файла
+        if not file.filename.lower().endswith('.csv'):
+            logger.warn(f'Загружен файл пользователей с неправильным расширением: {filepath}')
+            flash('Поддерживаются только CSV-файлы')
+            return redirect(request.url)
+
+        # Получаем путь к временному файлу
+        filepath = tempfile.gettempdir() + '/' + file.filename
+        file.save(filepath)
+
+        logger.info(f'загружен файл пользователей: {filepath}')
+
+        # Чтение данных из загруженного CSV-файла
+        try:
+            with open(filepath, mode='r', encoding='utf-8') as csvfile:
+                # Чтение данных из загруженного CSV-файла
+                reader = csv.reader(csvfile)
+                next(reader)  # Пропускаем первую строку (заголовки)
+
+                for row in reader:
+                    # Парсим данные из каждой строки
+                    try:
+                        _, department, username, fio, phone, password = row
+                    except ValueError:
+                        continue  # Пропускаем строки с неверной структурой
+
+                    # Проверяем, существует ли пользователь с таким именем
+                    existing_user = User.query.filter_by(username=username).first()
+                    
+                    # если задан пароль, то удяляем лишние пробелы
+                    if password:
+                        password = password.strip()
+
+                    if existing_user:
+                        # Обновляем данные существующего пользователя
+                        existing_user.department = department
+                        existing_user.fio = fio
+                        existing_user.phone = phone                        
+                        # если пароль не задан оставляем прежний
+                        if password:
+                            existing_user.set_password(password.strip())
+                    else:
+                        # Создаем нового пользователя
+                        if not password:
+                            flash(f'Для нового пользователя не задан пароль: {username}')
+
+                        new_user = User(
+                            department=department,
+                            username=username,
+                            fio=fio,
+                            phone=phone
+                        )
+                        new_user.set_password(password)
+
+                        db.session.add(new_user)
+
+                # Сохраняем изменения в базу данных
+                db.session.commit()
+
+            flash('Данные успешно загружены!')
+            return redirect(url_for('show_users'))
+
+        except Exception as e:
+            flash(f'Ошибка при обработке файла: {e}')
+            logger.error(f'Ошибка при обработке файла: {e}')
+            return redirect(request.url)
+
+        finally:
+            # Удаляем файл после обработки
+            os.remove(filepath)
+
+    else:
+        return render_template('users_upload_file.html')
 
 
 if __name__ == '__main__':
