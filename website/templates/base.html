@@ -35,13 +35,13 @@
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Конфигурация</a>
                     <ul class="dropdown-menu">
                         <li>
-                            <a class="dropdown-item" href="{{ url_for('show_users') }}">Абоненты</a>
+                            <a class="dropdown-item" href="{{ url_for('users_bp.show_users') }}">Абоненты</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="{{ url_for('settings') }}">Настройки</a>
+                            <a class="dropdown-item" href="{{ url_for('settings_bp.settings') }}">Настройки</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="{{ url_for('call_categories') }}">Категории звонков</a>
+                            <a class="dropdown-item" href="{{ url_for('categories_bp.call_categories') }}">Категории звонков</a>
                         </li>
                     </ul>
                 </li>
