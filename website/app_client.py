@@ -5,16 +5,17 @@ from flask import (
     Flask, request, render_template, redirect, url_for, flash, send_file, abort,  make_response
 )
 from flask_login import (
-    LoginManager, login_user, logout_user, login_required
+    LoginManager, current_user, login_user, logout_user, login_required
 )
 import requests
 from datetime import datetime, timedelta
 import csv
 from io import StringIO
 import tempfile
+import json
 
 # Импортируем модели из models.py
-from models import User, Calls, db
+from models import db, User, Calls, Settings, CallCategory
 
 load_dotenv()
 
@@ -118,6 +119,7 @@ def register():
 
 
 @app.route("/record/<int:id>")
+@login_required
 def get_record_file(id):
     # Получаем звонок
     call = Calls.query.get_or_404(id)
@@ -256,6 +258,7 @@ def edit_user(id):
     return render_template('user_edit.html', user=user, existing_departments=existing_departments)
 
 @app.route('/users/delete/<int:id>', methods=['GET', 'POST'])
+@login_required
 def delete_user(id):
     """
     Обработчик для удаления пользователя.
@@ -274,6 +277,7 @@ def delete_user(id):
     return render_template('user_delete_confirm.html', user=user)
 
 @app.route('/users/export_csv')
+@login_required
 def users_export_csv():
     # Получаем всех пользователей
     users = User.query.all()
@@ -299,6 +303,7 @@ def users_export_csv():
     return output
 
 @app.route('/users/upload_csv', methods=['GET', 'POST'])
+@login_required
 def users_upload_csv():
     if request.method == 'POST':
         # Проверяем, есть ли файл в запросе
@@ -320,7 +325,7 @@ def users_upload_csv():
             return redirect(request.url)
 
         # Получаем путь к временному файлу
-        filepath = tempfile.gettempdir() + '/' + file.filename
+        filepath = os.path.join(tempfile.gettempdir(), file.filename)
         file.save(filepath)
 
         logger.info(f'загружен файл пользователей: {filepath}')
@@ -386,6 +391,107 @@ def users_upload_csv():
 
     else:
         return render_template('users_upload_file.html')
+
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    settings = Settings.query.first()
+
+    if settings is None:
+        # Создание новой записи в таблице Settings
+        settings = Settings()
+        db.session.add(settings)
+        db.session.commit()
+
+    if request.method == 'POST':
+        # Обработка формы для изменения настроек
+        greeting_file = request.files.get('greeting_file')
+        modules = request.form.getlist('modules')
+
+        if greeting_file:
+            # Сохранение нового файла приветствия
+            greeting_file_path = os.path.join(tempfile.gettempdir(), greeting_file.filename)
+            greeting_file.save(greeting_file_path)
+            settings.greeting_file = greeting_file_path
+
+        # Обработка модулей
+        settings.modules = {module: module in modules for module in settings.modules}
+
+        db.session.commit()
+        flash('Настройки успешно сохранены!', 'success')
+        return redirect(url_for('settings'))
+
+    return render_template('settings.html', settings=settings)
+
+
+@app.route('/settings/greeting_file')
+@login_required
+def get_greeting_file():
+    settings = Settings.query.first()
+    if settings.greeting_file:
+        return send_file(settings.greeting_file, as_attachment=True)
+    else:
+        abort(404)
+
+@app.route('/settings/greeting_file/delete', methods=['POST'])
+@login_required
+def delete_greeting_file():
+    settings = Settings.query.first()
+    if settings.greeting_file:
+        os.remove(settings.greeting_file)
+        settings.greeting_file = None
+        db.session.commit()
+        flash('Файл голосового приветствия успешно удален!', 'success')
+    else:
+        flash('Файл голосового приветствия не найден.', 'warning')
+    return redirect(url_for('settings'))
+
+@app.route('/call_categories', methods=['GET', 'POST'])
+@login_required
+def call_categories():
+    categories = CallCategory.query.all()
+
+    if request.method == 'POST':
+        # Обработка формы для добавления новой категории
+        name = request.form['name']
+
+        new_category = CallCategory(name=name)
+        db.session.add(new_category)
+        db.session.commit()
+        flash('Категория успешно добавлена!', 'success')
+        return redirect(url_for('call_categories'))
+
+    return render_template('call_categories.html', categories=categories)
+
+@app.route('/call_categories/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_call_category(id):
+    category = CallCategory.query.get_or_404(id)
+
+    if request.method == 'POST':
+        # Обработка формы для редактирования категории
+        category.name = request.form['name']
+        db.session.commit()
+        flash('Категория успешно отредактирована!', 'success')
+        return redirect(url_for('call_categories'))
+
+    return render_template('edit_call_category.html', category=category)
+
+@app.route('/call_categories/delete/<int:id>', methods=['GET'])
+@login_required
+def delete_call_category_confirmation(id):
+    category = CallCategory.query.get_or_404(id)
+    return render_template('delete_confirmation.html', category=category)
+
+
+@app.route('/call_categories/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_call_category(id):
+    category = CallCategory.query.get_or_404(id)
+    db.session.delete(category)
+    db.session.commit()
+    flash('Категория успешно удалена!', 'success')
+    return redirect(url_for('call_categories'))
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from models import User, db
+from models import User, Settings, db
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # Операции с базой данных выполняются внутри контекста приложения
     with app.app_context():
         # Удаляем и создаем заново базу данных
-        db.drop_all()
+        #db.drop_all()
         db.create_all()
         print('База данных создана успешно.')
 
@@ -43,5 +43,12 @@ if __name__ == '__main__':
         password=os.getenv('MANAGER_PWD', 'password')
         manager.set_password(password)
         db.session.add(manager)
+
+        settings = Settings(
+            greeting_file = "",
+            modules = { "module-speech" : False }
+        )
+        db.session.add(settings)
+        
         db.session.commit()
         print('Начальные данные для пользователя manager добавлены.')
