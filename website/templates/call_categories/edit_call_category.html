@@ -5,12 +5,17 @@
 {% block content %}
 <h1>Редактирование категории звонка</h1>
 
-<form method="POST">   
+<form method="POST">
+    <div class="mb-3">
+        <label for="id" class="form-label">Категория:</label>
+        <input type="text" class="form-control" id="id" name="newid" value="{{ category.id }}" required>
+    </div>
     <div class="mb-3">
         <label for="name" class="form-label">Название категории:</label>
         <input type="text" class="form-control" id="name" name="name" value="{{ category.name }}" required>
     </div>
     <button type="submit" class="btn btn-primary">Сохранить</button>
+    <!-- Ссылка для возврата назад -->
+    <a href="{{ url_for('categories_bp.call_categories') }}" class="btn btn-secondary">Отмена</a>
 </form>
 {% endblock %}
-

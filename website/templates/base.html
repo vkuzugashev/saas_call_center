@@ -27,12 +27,13 @@
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
               <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="/">Галвная</a>
+                <a class="nav-link active" aria-current="page" href="/">Главная</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link {% if request.path == '/history' %}active{% endif %}"
                 href="{{ url_for('call_log_bp.show_log') }}">Журнал звонков</a>
               </li>
+              {% if current_user.is_authenticated and current_user.username == 'admin' %}
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                   Конфигурация
@@ -54,6 +55,7 @@
               <li class="nav-item">
                 <a class="nav-link disabled" aria-disabled="true">Disabled</a>
               </li>
+              {% endif %}
             </ul>
             {% if current_user.is_authenticated %}
             <div сдфыы="d-flex align-items-center">
