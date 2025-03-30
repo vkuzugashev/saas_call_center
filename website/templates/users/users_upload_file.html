@@ -6,19 +6,6 @@
 
 {% block content %}
     <h1 class="display-5 text-center mb-4">Загрузка списка пользователей (CSV-файл)</h1>
-
-    <!-- Блок для отображения сообщений -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
     <form method="POST" action="{{ url_for('users_bp.users_upload_csv') }}" enctype="multipart/form-data">
         <div class="row gx-3 gy-2 align-items-center">
             <div class="col-auto">

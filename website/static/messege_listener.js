@@ -12,6 +12,6 @@ window.addEventListener("DOMContentLoaded", () => {
       for (item of data.contracts){
         $('#rows').append(`<tr><td>${item.contract}</td><td>${item.status}</td></tr>`);
       }
-      $('#exampleModal').modal('show');
+      $('#callModal').modal('show');
     };
   });
