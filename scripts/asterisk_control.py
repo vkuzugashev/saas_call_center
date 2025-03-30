@@ -13,19 +13,29 @@ CONTAINER_NAME = 'asterisk'
 
 # Функция для создания Docker/Podman образа
 def build_image(image_name):
-    system = platform.system().lower()
-    if system == 'windows':
-        command = ['docker', 'build', '-t', image_name, ASTERISK_PATH]
-    elif system == 'linux':
-        command = ['podman', 'build', '-t', image_name, ASTERISK_PATH]
-    else:
-        raise RuntimeError(f"Не поддерживаемая платформа: {system}.")
+   """
+   Функция для создания Docker/Podman образа.
 
-    result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise RuntimeError(f"Ошибка при создании образа: {result.stderr}")
-    else:
-        print("Контейнерный образ успешно создан.")
+   Args:
+       image_name (str): Имя образа.
+
+   Returns:
+       None
+   """   
+   system = platform.system().lower()
+   if system == 'windows':
+       command = ['docker', 'build', '-t', image_name, ASTERISK_PATH]
+   elif system == 'linux':
+       command = ['podman', 'build', '-t', image_name, ASTERISK_PATH]
+   else:
+       raise RuntimeError(f"Не поддерживаемая платформа: {system}.")
+
+   result = subprocess.run(command, capture_output=True, text=True)
+   if result.returncode != 0:
+       raise RuntimeError(f"Ошибка при создании образа: {result.stderr}")
+   else:
+       print("Контейнерный образ успешно создан.")
+
 
 # Функция для запуска контейнера
 def create_container(container_name, image_name):
@@ -156,7 +166,7 @@ def replace_ip_in_file(file_path, new_value):
         file.write(updated_content)
 
 def start():
-   run_container(CONTAINER_NAME, IMAGE_NAME)
+   run_container(CONTAINER_NAME)
     
 def stop():
    # Проверяем наличие контейнера и останавливаем его, если он существует
