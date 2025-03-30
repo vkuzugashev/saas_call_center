@@ -60,7 +60,7 @@ def create_container(container_name, image_name):
         print(f"Контейнер '{container_name}' успешно создан.")
 
 # Функция для запуска контейнера
-def run_container(container_name, image_name):
+def run_container(container_name):
     system = platform.system().lower()
     if system == 'windows':
         command = [
