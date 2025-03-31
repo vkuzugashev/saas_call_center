@@ -1,10 +1,23 @@
 import os
+import platform
 import subprocess
 import random
 import string
 import sys
+import logging
+
+logger = logging.getLogger("service_control")
 
 SERVICE_PATH = '../service/'
+
+def get_docker_cmd():
+   system = platform.system().lower()
+   if system == 'windows':
+      return 'docker'
+   elif system == 'linux':
+      return 'podman'
+   else:
+       raise RuntimeError("Unsupported OS")
 
 def generate_password(length=10):
    """
@@ -30,7 +43,8 @@ def create_image(image_name, dockerfile_path):
    Returns:
        None
    """
-   command = ['docker', 'build', '-t', image_name, dockerfile_path]
+   docker = get_docker_cmd()
+   command = [docker, 'build', '-t', image_name, dockerfile_path]
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
        raise RuntimeError(f"Ошибка при создании образа: {result.stderr}")
@@ -58,7 +72,9 @@ def create_container(container_name, image_name, env_vars, ports):
    for host_port, container_port in ports.items():
        port_args.extend(['-p', f'{host_port}:{container_port}'])
 
-   command = ['docker', 'create', '--name', container_name] + env_args + port_args + [image_name]
+   # Проверяем наличие контейнера
+   docker = get_docker_cmd()
+   command = [docker, 'create', '--name', container_name] + env_args + port_args + [image_name]
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
        raise RuntimeError(f"Ошибка при создании контейнера: {result.stderr}")
@@ -74,14 +90,26 @@ def remove_container(container_name):
 
    Returns:
       None
-      """
+   """
+   # Проверяем наличие контейнера
+   docker = get_docker_cmd()
+   try:
+       inspect_command = [docker, 'inspect', '--type=container', container_name]
+       inspect_result = subprocess.run(inspect_command, capture_output=True, text=True)
+       if inspect_result.returncode != 0:
+           logger.error(f"Контейнер {container_name} не существует.")
+           return
+   except Exception as e:
+       logger.error(f"Ошибка при проверке существования контейнера: {e}")
+       return
+
    # Удаление контейнера
-   command = ['docker', 'rm', container_name]
+   command = [docker, 'rm', container_name]
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
-      raise RuntimeError(f"Ошибка при удалении контейнера: {result.stderr}")
+       raise RuntimeError(f"Ошибка при удалении контейнера: {result.stderr}")
    else:
-      print(f"Контейнер {container_name} успешно удален.")
+       print(f"Контейнер {container_name} успешно удален.")
 
 
 def start_container(container_name):
@@ -94,7 +122,8 @@ def start_container(container_name):
    Returns:
        None
    """
-   command = ['docker', 'start', container_name]
+   docker = get_docker_cmd()
+   command = [docker, 'start', container_name]
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
        raise RuntimeError(f"Ошибка при запуске контейнера: {result.stderr}")
@@ -111,12 +140,26 @@ def stop_container(container_name):
    Returns:
        None
    """
-   command = ['docker', 'stop', container_name]
+   # Проверяем наличие контейнера
+   docker = get_docker_cmd()
+   try:
+       inspect_command = [docker, 'inspect', '--type=container', container_name]
+       inspect_result = subprocess.run(inspect_command, capture_output=True, text=True)
+       if inspect_result.returncode != 0:
+           logger.error(f"Контейнер {container_name} не существует.")
+           return
+   except Exception as e:
+       logger.error(f"Ошибка при проверке существования контейнера: {e}")
+       return
+
+   # Остановка контейнера
+   command = [docker, 'stop', container_name]
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
        raise RuntimeError(f"Ошибка при остановке контейнера: {result.stderr}")
    else:
        print(f"Контейнер {container_name} успешно остановлен.")
+
 
 def build():
    """
