@@ -3,5 +3,5 @@ COPY requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /usr/src/app
-COPY app_ami.py .
-CMD [ "python", "-u", "./app_ami.py"]
+COPY app_snd_trns.py .
+CMD [ "python", "-u", "./app_snd_trns.py"]

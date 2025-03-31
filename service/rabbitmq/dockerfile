@@ -1,4 +1,4 @@
-FROM rabbitmq:3.9.9-alpine
+FROM rabbitmq:4.0.7-alpine
 
 # Открытие портов
 EXPOSE 5672
