@@ -17,6 +17,9 @@ from models import db, User
 
 load_dotenv()
 
+# Настройки сервера
+DEBUG = bool(os.getenv('DEBUG', True))
+
 # Уровень логирования
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 # Настройка логирования
@@ -137,4 +140,4 @@ app.register_blueprint(categories_bp)
 app.register_blueprint(call_log_bp)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run( host='0.0.0.0', port=5000, debug=DEBUG)
