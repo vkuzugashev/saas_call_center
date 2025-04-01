@@ -1,7 +1,7 @@
 FROM python:3-alpine
 WORKDIR /app
 COPY requirements.txt .
-COPY app_rcv_trns.py .
-COPY env.example .env
+COPY app_call.py .
+COPY .env.example .env
 RUN python -m pip install --no-cache-dir -r requirements.txt
-CMD [ "python", "-u", "./app_rcv_trns.py"]
+CMD [ "python", "-u", "./app_call.py"]

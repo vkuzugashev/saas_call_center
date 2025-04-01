@@ -22,12 +22,6 @@ DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PWD}@{DB_HOST}/{DB_NAME}"
 # Уровень логирования
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
-# Настройки для Yandex Object Storage
-YOS_ACCESS_KEY_ID = os.getenv("YOS_ACCESS_KEY_ID")
-YOS_SECRET_ACCESS_KEY = os.getenv("YOS_SECRET_ACCESS_KEY")
-YOS_BUCKET_NAME = "penart-record"
-YOS_REGION = "ru-central1"
-
 # SPEECH
 API_KEY = os.getenv("API_SECRET_KEY")  # Обратите внимание на переименование переменной
 SPEECH_API_ENDPOINT = "https://operation.api.cloud.yandex.net//operations"

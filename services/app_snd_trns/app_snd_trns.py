@@ -33,7 +33,7 @@ YOS_REGION = "ru-central1"
 # SPEECH
 API_SECRET_KEY = os.getenv("API_SECRET_KEY")
 SPEECH_API_ENDPOINT = "https://transcribe.api.cloud.yandex.net/speech/stt/v2/longRunningRecognize"
-MODEL = os.getenv("MODEL")
+SPEECH_MODEL = os.getenv("SPEECH_MODEL")
 
 # Интервал опроса базы данных (в секундах)
 POLLING_INTERVAL = int(os.getenv("POLLING_INTERVAL", "900"))  # По умолчанию 15 минут
@@ -99,7 +99,7 @@ def recognize_audio(record_file):
     headers = {"Authorization": f"Api-Key {API_SECRET_KEY}"}
     payload = {"config": {
                     "specification": { 
-                        "model": MODEL,    #general - основной режим, deferred-general - отложенный
+                        "model": SPEECH_MODEL,    #general - основной режим, deferred-general - отложенный
                         "audioEncoding": "LINEAR16_PCM", 
                         "sampleRateHertz": "8000",
                         "audioChannelCount": 2,
