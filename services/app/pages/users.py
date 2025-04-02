@@ -3,7 +3,7 @@ from io import StringIO
 import logging
 import os
 import tempfile
-from flask import Blueprint, flash, make_response, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, make_response, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from models import db, User
@@ -29,12 +29,11 @@ def show_users():
    else:
        users = User.query.all()
 
-   return render_template(
-       'users.html',
-       users=users,
-       departments=departments,
-       selected_department=selected_department
-   )
+   return render_template('users.html',
+                           users=users,
+                           departments=departments,
+                           selected_department=selected_department,
+                           modules = current_app.config['modules'])
 
 
 @users_bp.route('/users/new', methods=['GET', 'POST'])
@@ -74,7 +73,10 @@ def create_user():
            db.session.rollback()
            flash(f'Ошибка при создании пользователя [{user.username}]: {e}', 'danger')
 
-   return render_template('user_edit.html', user=None, existing_departments=existing_departments)
+   return render_template('user_edit.html', 
+                           user = None, 
+                           existing_departments = existing_departments,
+                           modules = current_app.config['modules'])
 
 
 @users_bp.route('/users/edit/<int:id>', methods=['GET', 'POST'])
@@ -112,7 +114,10 @@ def edit_user(id):
        flash(f'Пользователь [{user.username}] успешно обновлен!', 'success')
        return redirect(url_for('users_bp.show_users'))
    
-   return render_template('user_edit.html', user=user, existing_departments=existing_departments)
+   return render_template('user_edit.html', 
+                          user = user, 
+                          existing_departments = existing_departments,
+                          modules = current_app.config['modules'])
 
 
 @users_bp.route('/users/delete/<int:id>', methods=['GET', 'POST'])
@@ -141,7 +146,7 @@ def delete_user(id):
             db.session.rollback()
             flash(f'Произошла ошибка при удалении пользователя: [{user.username}], {e}', 'danger')
             logger.error(f'Error deleting user with id={id}: {e}')
-    return render_template('user_delete_confirm.html', user=user)
+    return render_template('user_delete_confirm.html', user=user, modules=current_app.config['modules'])
 
 
 @users_bp.route('/users/export_csv')

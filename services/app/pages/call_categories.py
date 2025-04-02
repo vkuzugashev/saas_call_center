@@ -1,5 +1,5 @@
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from models import db, CallCategory
 
@@ -38,7 +38,7 @@ def call_categories():
         flash(f'Категория [{name}] успешно добавлена!', 'success')
         return redirect(url_for('categories_bp.call_categories'))
 
-    return render_template('call_categories.html', categories=categories)
+    return render_template('call_categories.html', categories = categories, modules = current_app.config['modules'])
 
 
 @categories_bp.route('/call_categories/edit/<int:id>', methods=['GET', 'POST'])
@@ -90,7 +90,7 @@ def edit_call_category(id):
         flash(f'Категория [{category.name}] успешно отредактирована!', 'success')
         return redirect(url_for('categories_bp.call_categories'))
 
-    return render_template('edit_call_category.html', category=category)
+    return render_template('edit_call_category.html', category = category, modules = current_app.config['modules'])
 
 
 @categories_bp.route('/call_categories/delete/<int:id>', methods=['GET'])
@@ -106,7 +106,7 @@ def delete_call_category_confirmation(id):
        Response: Ответ сервера.
    """
    category = CallCategory.query.get_or_404(id)
-   return render_template('delete_confirmation.html', category=category)
+   return render_template('delete_confirmation.html', category=category, modules = current_app.config['modules'])
 
 
 

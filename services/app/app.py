@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import logging
 from flask import (
-    Flask, request, render_template, redirect, url_for, flash
+    Flask, request, render_template, redirect, session, url_for, flash
 )
 from flask_login import (
     LoginManager, current_user, login_user, logout_user, login_required
@@ -47,6 +47,15 @@ db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+def get_modules_settings():
+   modules = {}
+   modules['MOD_STATISTIC'] = os.environ.get('MOD_STATISTIC', 'False').lower() in ('true', '1', 't', 'y', 'yes')
+   modules['MOD_RECORD'] = os.environ.get('MOD_RECORD', 'False').lower() in ('true', '1', 't', 'y', 'yes')
+   modules['MOD_TRANSCRIPT'] = os.environ.get('MOD_TRANSCRIPT', 'False').lower() in ('true', '1', 't', 'y', 'yes')
+   modules['MOD_NEW_CALL'] = os.environ.get('MOD_NEW_CALL', 'False').lower() in ('true', '1', 't', 'y', 'yes')
+   print(modules)
+   return modules
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -54,7 +63,8 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
-    return render_template('index.html')
+    return render_template('index.html', modules = app.config['modules'])
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -81,7 +91,6 @@ def login():
 
    return render_template('login.html')
 
-
 @app.route('/logout')
 @login_required
 def logout():
@@ -93,7 +102,6 @@ def logout():
    """
    logout_user()
    return redirect(url_for('login'))
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -140,4 +148,5 @@ app.register_blueprint(categories_bp)
 app.register_blueprint(call_log_bp)
 
 if __name__ == '__main__':
+    app.config['modules'] = get_modules_settings()
     app.run( host='0.0.0.0', port=5000, debug=DEBUG)

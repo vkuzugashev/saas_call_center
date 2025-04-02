@@ -69,7 +69,7 @@ def create_image(image_name, dockerfile_path):
    else:
        logger.info(f"Образ {image_name} успешно создан.")
 
-def create_container(container_name, image_name, env_vars, ports):
+def create_container(container_name, image_name, env_vars, ports, vol_vars={}):
    """
    Функция для создания Docker контейнера.
 
@@ -102,8 +102,13 @@ def create_container(container_name, image_name, env_vars, ports):
    for host_port, container_port in ports.items():
        port_args.extend(['-p', f'{host_port}:{container_port}'])
 
+   vol_args = []
+   for host_volume, container_volume in vol_vars.items():
+       host_volume = os.path.abspath(host_volume)
+       vol_args.extend(['-v', f'{host_volume}:{container_volume}'])
+
    # Создание контейнера
-   command = [docker, 'create', '--name', container_name] + env_args + port_args + [image_name]
+   command = [docker, 'create', '--name', container_name] + env_args + port_args + vol_args + [image_name]
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
        raise RuntimeError(f"Ошибка при создании контейнера {container_name}: {result.stderr}")
@@ -407,13 +412,20 @@ def build():
       '5038':'5038',
       '10000-10100':'10000-10100/udp',
       '8088':'8088'
+   },{
+       os.path.join(asterisk_path,'sounds'): '/var/lib/asterisk/sounds',
+       '../var/asterisk/monitor':'/var/spool/asterisk/monitor',
+       '../var/asterisk/log':'/var/log/asterisk'
    })
    create_container('rabbitmq', 'rabbitmq', {},{'5672':'5672'})
    create_container('redis', 'redis', {}, {'6379': '6379'})
    create_container('mariadb', 'mariadb', {       
       'MARIADB_ROOT_PASSWORD': db_password,
       'MARIADB_DATABASE': 'call_center'},
-      {'3306': '3306'})   
+      {'3306': '3306'},
+      {
+         '../var/mariadb': '/var/lib/mysql'
+      })   
    create_container('app_ami', 'app_ami', {
        'ASTERISK_HOST': local_ip,
        'RABBIT_HOST': local_ip,

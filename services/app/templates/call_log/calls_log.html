@@ -38,12 +38,15 @@
             <th scope="col">ID</th>
             <th scope="col">Время звонка</th>
             <th scope="col">Время окончания</th>
-            <th scope="col">Номер звонящего</th>
-            <th scope="col">Номер вызываемого</th>
-            <th scope="col">Клиент</th>
+            <th scope="col">Позвонил</th>
+            <th scope="col">Ответил</th>
             <th scope="col">Статус звонка</th>
+            {% if modules['MOD_RECORD'] %}
             <th scope="col">Аудио запись</th>
+            {% endif %}
+            {% if modules['MOD_TRANSCRIPT'] %}
             <th scope="col">Диалог</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -54,13 +57,15 @@
             <td>{{ call.call_end }}</td>
             <td>{{ call.caller }}</td>
             <td>{{ call.callee }}</td>
-            <td>{{ call.caller_id }}</td>
             <td>{{ call.call_status }}</td>
+            {% if modules['MOD_RECORD'] %}
             <td>
                 {% if call.record_file %}
                 <a href="{{ url_for('call_log_bp.get_record_file', id=call.id) }}" target="_blank">Запись</a>
                 {% endif %}
             </td>
+            {% endif %}
+            {% if modules['MOD_TRANSCRIPT'] %}
             <td>
                 {% if call.dialog %}
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#dialogModal" data-bs-whatever="dialog{{call.id}}">
@@ -69,6 +74,7 @@
                 <div id="dialog{{call.id}}" style="display: none">{{ call.dialog }}</div>
                 {% endif %}
             </td>
+            {% endif %}
         </tr>
         {% endfor %}
     </tbody>

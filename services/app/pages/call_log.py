@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import logging
 import os
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, send_file, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, send_file, url_for
 from flask_login import login_required
 import requests
 
@@ -58,7 +58,8 @@ def show_log():
    context = {
        'pagination': paginate,
        'fromdt': fromdt,
-       'todt': todt
+       'todt': todt,
+       'modules': current_app.config['modules']
    }
 
    return render_template('calls_log.html', **context)
