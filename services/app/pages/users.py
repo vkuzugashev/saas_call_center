@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 from io import StringIO
 import logging
 import os
@@ -54,6 +55,7 @@ def create_user():
        username = request.form['username']
        fio = request.form['fio']
        phone = request.form['phone']
+       queue = request.form['queue']
        password = request.form['password'].strip()
 
        if not password:
@@ -61,8 +63,9 @@ def create_user():
            return redirect(url_for('users_bp.show_users'))
        
        # Создаем нового пользователя
-       user = User(username=username, fio=fio, phone=phone, department=department)
+       user = User(username=username, fio=fio, phone=phone, department=department, queue=queue)
        user.set_password(password)
+       user.updated_at = datetime.now()
 
        try:
            db.session.add(user)
@@ -103,8 +106,10 @@ def edit_user(id):
        user.department = department
        user.fio = request.form['fio']
        user.phone = request.form['phone']
+       user.queue = request.form['queue']
        password = request.form['password'].strip()
-       
+       user.updated_at = datetime.now()
+
        # Проверяем, если пароль введен и не пустая строка
        if password:
            user.set_password(password)
@@ -158,6 +163,8 @@ def users_export_csv():
    Returns:
        Response: Ответ сервера.
    """
+   # Проверяем, если флаг ispassport установлен в запросе
+   is_asterisk_hash = request.args.get('asterisk_hash', 'False') in ('t', 'true', 'True', 'TRUE')
    # Получаем всех пользователей
    users = User.query.all()
    
@@ -166,11 +173,14 @@ def users_export_csv():
    cw = csv.writer(si)
    
    # Заголовки столбцов
-   cw.writerow(['ID', 'Отдел', 'Имя пользователя', 'ФИО', 'Телефон', 'Пароль'])
+   cw.writerow(['ID', 'Отдел', 'Имя пользователя', 'ФИО', 'Телефон','Очередь', 'Пароль'])
    
    # Заполняем строки данными
    for user in users:
-       cw.writerow([user.id, user.department, user.username, user.fio, user.phone, None])
+       if is_asterisk_hash:
+         cw.writerow([user.id, user.department, user.username, user.fio, user.phone, user.queue, user.asterisk_hash])
+       else:
+         cw.writerow([user.id, user.department, user.username, user.fio, user.phone, user.queue, None])
    
    # Преобразуем содержимое StringIO в байты
    output = make_response(si.getvalue())
@@ -180,7 +190,6 @@ def users_export_csv():
    output.headers["Content-type"] = "text/csv"
    
    return output
-
 
 @users_bp.route('/users/upload_csv', methods=['GET', 'POST'])
 @login_required
@@ -218,6 +227,8 @@ def users_upload_csv():
 
        # Чтение данных из загруженного CSV-файла
        try:
+           # получаем текущую дату и время для записи времени обновления без милисекунд
+           upload_time = datetime.now().replace(microsecond=0)
            with open(filepath, mode='r', encoding='utf-8') as csvfile:
                # Чтение данных из загруженного CSV-файла
                reader = csv.reader(csvfile)
@@ -226,7 +237,7 @@ def users_upload_csv():
                for row in reader:
                    # Парсим данные из каждой строки
                    try:
-                       _, department, username, fio, phone, password = row
+                       _, department, username, fio, phone, queue, password = row
                    except ValueError:
                        continue  # Пропускаем строки с неверной структурой
 
@@ -241,7 +252,9 @@ def users_upload_csv():
                        # Обновляем данные существующего пользователя
                        existing_user.department = department
                        existing_user.fio = fio
-                       existing_user.phone = phone                        
+                       existing_user.phone = phone
+                       existing_user.queue = queue
+                       existing_user.updated_at = upload_time
                        # если пароль не задан оставляем прежний
                        if password:
                            existing_user.set_password(password.strip())
@@ -256,7 +269,9 @@ def users_upload_csv():
                            department=department,
                            username=username,
                            fio=fio,
-                           phone=phone
+                           phone=phone,
+                           queue=queue,
+                           updated_at=upload_time
                        )
                        new_user.set_password(password)
 
@@ -264,8 +279,18 @@ def users_upload_csv():
 
                # Сохраняем изменения в базу данных
                db.session.commit()
+               
+               
+               # Удалим все записи старше upload_time кроме admin
+               admin_user = User.query.filter_by(username=current_app.config['MANAGER_USER']).first()
+               if admin_user:
+                   User.query.filter(User.updated_at < upload_time, User.id != admin_user.id).delete()
+               else:
+                   # если не найден админ то удаляем всех пользователей
+                   User.query.filter(User.updated_at < upload_time).delete() 
+               db.session.commit()
 
-           flash('Данные успешно загружены!')
+           flash('Данные успешно загружены!', 'success')
            return redirect(url_for('users_bp.show_users'))
 
        except Exception as e:

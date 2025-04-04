@@ -1,6 +1,8 @@
+from flask import current_app
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+import hashlib
 
 db = SQLAlchemy()
 
@@ -10,10 +12,15 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     fio = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(11), nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)  # Хранится хеш пароля
+    password_hash = db.Column(db.String(256), nullable=False)  # Хранится хеш пароля    
+    asterisk_hash = db.Column(db.String(256), nullable=False)  # Хранится хеш пароля для asterisk
+    queue = db.Column(db.String(100), nullable=True)
+    updated_at = db.Column(db.DateTime, nullable=True)    
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
+        # создать md5 пароль для asterisk
+        self.asterisk_hash = hashlib.md5(f'{self.username}:asterisk:{password}'.encode()).hexdigest()
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -53,4 +60,3 @@ class CallCategory(db.Model):
 
     def __repr__(self):
         return f'<CallCategory {self.name}>'
-

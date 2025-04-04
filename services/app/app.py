@@ -40,6 +40,10 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Настройки пользователя администратора
+app.config['MANAGER_USER'] = os.getenv('MANAGER_USER')
+
+
 # Инициализируем DB
 db.init_app(app)
 
@@ -80,11 +84,14 @@ def login():
    if request.method == 'POST':
        username = request.form['username']
        password = request.form['password']
+       
 
        user = User.query.filter_by(username=username).first()
 
        if user is not None and user.check_password(password):
+           logger.debug(f'Logging username: {username}, password: {password}')
            login_user(user)
+           logger.debug(f'Logged username: {username}, password: {password}')
            return redirect(url_for('index'))
 
        flash('Неправильное имя пользователя или пароль.')
