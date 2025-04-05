@@ -29,7 +29,7 @@ class User(UserMixin, db.Model):
         return f'<User {self.username}>'
 
 class Calls(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement='auto')
+    id = db.Column(db.Integer, primary_key=True)
     caller = db.Column(db.String(20), nullable=False)
     callee = db.Column(db.String(20), nullable=False)
     caller_id = db.Column(db.String(200), nullable=True)
@@ -45,14 +45,20 @@ class Calls(db.Model):
     
     def __repr__(self):
         return f'<Call {self.caller} -> {self.callee}>'
-    
-class Settings(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement='auto')
-    greeting_file = db.Column(db.String(255), nullable=True)
-    modules = db.Column(db.JSON, nullable=False, default={})
 
-    def __repr__(self):
-        return f'<Settings>'
+class Contact(db.Model):
+   id = db.Column(db.Integer, primary_key=True)
+   name = db.Column(db.String(100), nullable=False)
+   phone = db.Column(db.String(11), nullable=False)
+   call_date = db.Column(db.DateTime, nullable=True)
+   is_lead = db.Column(db.Boolean, nullable=False, default=True)
+   note = db.Column(db.Text, nullable=True)
+   orders = db.Column(db.JSON, nullable=True)
+   updated_at = db.Column(db.DateTime, nullable=True)   
+
+   def __repr__(self):
+       return f'<Contact {self.name}>'
+
 
 class CallCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -60,3 +66,5 @@ class CallCategory(db.Model):
 
     def __repr__(self):
         return f'<CallCategory {self.name}>'
+    
+

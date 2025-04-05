@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import logging
 from flask import (
-    Flask, request, render_template, redirect, session, url_for, flash
+    Flask, request, render_template, redirect, url_for, flash
 )
 from flask_login import (
     LoginManager, current_user, login_user, logout_user, login_required
@@ -11,6 +11,7 @@ from pages.settings import settings_bp
 from pages.call_categories import categories_bp
 from pages.users import users_bp
 from pages.call_log import call_log_bp
+from pages.contacts import contacts_bp
 
 # Импортируем модели из models.py
 from models import db, User
@@ -153,6 +154,7 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(categories_bp)
 app.register_blueprint(call_log_bp)
+app.register_blueprint(contacts_bp)
 
 if __name__ == '__main__':
     app.config['modules'] = get_modules_settings()

@@ -215,7 +215,7 @@ def users_upload_csv():
 
        # Проверяем расширение файла
        if not file.filename.lower().endswith('.csv'):
-           logger.warning(f'Загружен файл пользователей с неправильным расширением: {filepath}')
+           logger.warning(f'Загружен файл пользователей с неправильным расширением: {file.filename}')
            flash('Поддерживаются только CSV-файлы','warning')
            return redirect(request.url)
 
@@ -279,7 +279,6 @@ def users_upload_csv():
 
                # Сохраняем изменения в базу данных
                db.session.commit()
-               
                
                # Удалим все записи старше upload_time кроме admin
                admin_user = User.query.filter_by(username=current_app.config['MANAGER_USER']).first()

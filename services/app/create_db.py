@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from models import User, Settings, db
+from models import User, db
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,18 +47,5 @@ if __name__ == '__main__':
             manager.set_password(MANAGER_PWD)
             db.session.add(manager)
 
-         # Если таблица Settings пустая то добавим данные для неё
-         settings = Settings.query.first()
-         if settings is None:
-            settings = Settings(
-               greeting_file = "",
-               modules = { 
-                    'statistic' : False, 
-                    'record': False, 
-                    'transcript': False, 
-                    'new_call': False 
-               }
-            )
-            db.session.add(settings)
          db.session.commit()
          print('Начальные данные для пользователя manager добавлены.')

@@ -82,10 +82,6 @@ same => n,Hangup()
 if __name__ == '__main__':
     # Убедимся, что выходные файлы существуют
     output_files = ['users.conf', 'members_operators.conf', 'users_extensions.conf']
-    #  for filename in output_files:
-    #      if not os.path.exists(filename):
-    #          with open(filename, 'w'):
-    #              pass  # Создаем пустой файл
 
     # проводим вход в систему
     session = requests.Session()
