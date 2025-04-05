@@ -8,7 +8,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
    <!-- Фильтр по номеру телефона и частичному совпадению с name -->
    <form method="GET" action="{{ url_for('contacts_bp.contacts') }}" class="d-flex">
-      <input type="text" name="search" placeholder="Поиск по номеру телефона или имени" class="form-control me-2" value="{{ search }}">
+      <input type="text" name="search" placeholder="Поиск по номеру телефона или имени" class="form-control me-2" value="{% if search %}{{ search }}{% endif %}">
       <button type="submit" class="btn btn-primary">Поиск</button>
    </form>
    <div class="d-flex">
