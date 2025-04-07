@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Подтверждение удаления категории{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h1>Подтверждение удаления категории</h1>
+    
+    <!-- Сообщение пользователю -->
+    <p>Вы уверены, что хотите удалить категорию "{{ category.name }}"?</p>
+    
+    <!-- Форма для отправки данных на сервер -->
+    <form action="{{ url_for('categories_bp.delete_call_category', id=category.id) }}" method="POST">
+     
+      <!-- Кнопка для подтверждения удаления -->
+      <button type="submit" class="btn btn-danger">Удалить</button>
+      
+      <!-- Ссылка для возврата назад -->
+      <a href="{{ url_for('categories_bp.call_categories') }}" class="btn btn-secondary">Отмена</a>
+    </form>
+  </div>
+{% endblock %}

@@ -1,8 +1,0 @@
-FROM python:3-alpine
-COPY requirements.txt .
-RUN python -m pip install --no-cache-dir -r requirements.txt
-
-WORKDIR /usr/src/app
-COPY app_ami.py .
-ENV RABBIT_HOST = localhost
-CMD [ "python", "-u", "./app_ami.py"]

@@ -1,8 +1,0 @@
-FROM python:3-alpine
-WORKDIR /usr/src/app
-COPY requirements.txt .
-COPY app_call.py .
-RUN python -m pip install --no-cache-dir -r requirements.txt
-ENV RABBIT_HOST = localhost
-ENV REDIS_HOST = localhost
-CMD [ "python", "-u", "./app_call.py"]
