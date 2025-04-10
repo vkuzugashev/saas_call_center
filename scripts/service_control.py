@@ -417,16 +417,6 @@ def build(service_name):
          key = key.strip().upper()
          f.write(f'{key}={value}\n')
 
-   # Сохранить в файл globals.conf строку MOD_RECORD=True или False в зависимости от значения modules['MOD_RECORD']
-   if modules['MOD_RECORD']:
-      record = 'True'
-   else:
-      record = 'False'
-   
-   with open(os.path.join(asterisk_path,'conf/globals.conf'), 'w', encoding='utf-8') as f:
-      line = 'MOD_RECORD=' + record + '\n'
-      f.write(line)
-
    # Остановка контейнеров   
    stop(service_name)
 
