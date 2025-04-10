@@ -10,6 +10,7 @@ import socket
 
 from dotenv import load_dotenv
 
+logging.basicConfig(level='INFO')
 logger = logging.getLogger("service_control")
 
 SERVICE_PATH = '../services/'
@@ -425,6 +426,15 @@ def build(service_name):
 
    # Создание образов только тех, что требуется
    if service_name == 'all' or service_name == 'asterisk':
+      if service_name == 'asterisk':
+         # Вызвать скрипт build_users.py для создания пользователей
+         command = ['py', 'build_users.py']
+         result = subprocess.run(command, capture_output=True, text=True)
+         if result.returncode != 0:
+            raise RuntimeError(f"Ошибка при запуска build_users.py: {result.stderr}")
+         else:
+            logger.info("Скрипт build_users.py успешно выполнен.")
+      
       create_image('asterisk', asterisk_path)
    
    if service_name == 'all' or service_name == 'mariadb':
@@ -549,7 +559,9 @@ def build(service_name):
          'MOD_STATISTIC': modules['MOD_STATISTIC'],
          'MOD_RECORD': modules['MOD_RECORD'],
          'MOD_TRANSCRIPT': modules['MOD_TRANSCRIPT'],
-         'MOD_NEW_CALL': modules['MOD_NEW_CALL']         
+         'MOD_NEW_CALL': modules['MOD_NEW_CALL'],
+         'MANAGEMENT_CONSOLE_URL': f'http://{local_ip}:8888'
+         
       }, {'5000': '5000'})
 
 
@@ -631,6 +643,22 @@ def stop(service_name):
    if service_name == 'all' or service_name == 'mariadb':
       stop_container('mariadb')
 
+def service_status(service_name):
+   """
+   Функция для получения статуса сервисных контейнеров.
+   """
+   docker = get_docker_cmd()
+   command = [docker, 'ps', '-a', '--format', '{{.Names}}\t{{.Status}}']
+   result = subprocess.run(command, capture_output=True, text=True)
+   if result.returncode != 0:
+      raise RuntimeError(f"Ошибка при получении статуса сервисов: {result.stderr}")
+   
+   for line in result.stdout.splitlines():
+      name, status = line.split('\t')
+      if name.startswith(service_name):
+         print(status)
+         return
+   return
   
    
 if __name__ == '__main__':
@@ -647,6 +675,8 @@ if __name__ == '__main__':
        start(service_name)
    elif command == 'stop':
        stop(service_name)
+   elif command == 'status':
+       service_status(service_name)
    else:
        logger.warning("Недопустимая команда.")
        sys.exit(1)

@@ -44,6 +44,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Настройки пользователя администратора
 app.config['MANAGER_USER'] = os.getenv('MANAGER_USER')
 
+app.config['MANAGEMENT_CONSOLE_URL'] = os.getenv('MANAGEMENT_CONSOLE_URL')
 
 # Инициализируем DB
 db.init_app(app)
@@ -158,4 +159,4 @@ app.register_blueprint(contacts_bp)
 
 if __name__ == '__main__':
     app.config['modules'] = get_modules_settings()
-    app.run( host='0.0.0.0', port=5000, debug=DEBUG)
+    app.run(host='0.0.0.0', port=5000, debug=DEBUG)
