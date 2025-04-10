@@ -96,7 +96,7 @@ def login():
            logger.debug(f'Logged username: {username}, password: {password}')
            return redirect(url_for('index'))
 
-       flash('Неправильное имя пользователя или пароль.')
+       flash('Неправильное имя пользователя или пароль.', 'danger')
 
    return render_template('login.html')
 
