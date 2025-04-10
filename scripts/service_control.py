@@ -545,7 +545,11 @@ def build(service_name):
          'DB_PWD': db_password,
          'MANAGER_USER': manager_user,
          'MANAGER_PWD': manager_password,
-         'RECORD_URL': f'http://{local_ip}:8088/static/monitor'
+         'RECORD_URL': f'http://{local_ip}:8088/static/monitor',
+         'MOD_STATISTIC': modules['MOD_STATISTIC'],
+         'MOD_RECORD': modules['MOD_RECORD'],
+         'MOD_TRANSCRIPT': modules['MOD_TRANSCRIPT'],
+         'MOD_NEW_CALL': modules['MOD_NEW_CALL']         
       }, {'5000': '5000'})
 
 
