@@ -132,7 +132,7 @@ def register():
        existing_user = User.query.filter_by(username=username).first()
 
        if existing_user:
-           flash('Имя пользователя уже занято.')
+           flash('Имя пользователя уже занято.', 'danger')
            return redirect(url_for('register'))
 
        new_user = User(
@@ -144,7 +144,7 @@ def register():
        db.session.add(new_user)
        db.session.commit()
 
-       flash('Аккаунт успешно создан!')
+       flash('Аккаунт успешно создан!', 'success')
        return redirect(url_for('login'))
 
    return render_template('register.html')
