@@ -5,6 +5,7 @@ EXPOSE 5038
 EXPOSE 10000-10100/udp
 #VOLUME /var/lib/asterisk/sounds /var/lib/asterisk/keys /var/lib/asterisk/phoneprov /var/spool/asterisk /var/log/asterisk
 VOLUME /var/lib/asterisk/sounds /var/log/asterisk /var/spool/asterisk/monitor
+ADD conf/globals.conf /etc/asterisk/globals.conf
 ADD conf/manager.conf /etc/asterisk/manager.conf
 ADD conf/modules.conf /etc/asterisk/modules.conf
 ADD conf/rtp.conf /etc/asterisk/rtp.conf
