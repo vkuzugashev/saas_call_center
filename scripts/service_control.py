@@ -38,6 +38,15 @@ def get_docker_cmd():
    else:
        raise RuntimeError("Unsupported OS")
 
+def get_python_cmd():
+   system = platform.system().lower()
+   if system == 'windows':
+      return 'py'
+   elif system == 'linux':
+      return 'python3'
+   else:
+       raise RuntimeError("Unsupported OS")
+
 def generate_password(length=10):
    """
    Функция для генерации случайного пароля.
@@ -428,7 +437,8 @@ def build(service_name):
    if service_name == 'all' or service_name == 'asterisk':
       if service_name == 'asterisk':
          # Вызвать скрипт build_users.py для создания пользователей
-         command = ['py', 'build_users.py']
+         py = get_python_cmd()
+         command = [py, 'build_users.py']
          result = subprocess.run(command, capture_output=True, text=True)
          if result.returncode != 0:
             raise RuntimeError(f"Ошибка при запуска build_users.py: {result.stderr}")
@@ -593,8 +603,9 @@ def start(service_name):
    if service_name == 'all' or service_name == 'app_db':
       start_container('app_db')
 
-   if service_name == 'all' or service_name == 'app':      
-      start_container('app', ['python', os.path.join(SERVICE_PATH,'app/create_db.py')])
+   if service_name == 'all' or service_name == 'app':
+      py = get_python_cmd()      
+      start_container('app', [py, os.path.join(SERVICE_PATH,'app/create_db.py')])
    
    if service_name == 'all' or service_name == 'app_rcv':
       start_container('app_rcv')
