@@ -652,13 +652,14 @@ def service_status(service_name):
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
       raise RuntimeError(f"Ошибка при получении статуса сервисов: {result.stderr}")
-   
+
    for line in result.stdout.splitlines():
       name, status = line.split('\t')
-      if name.startswith(service_name):
-         print(status)
+      if service_name == 'all':
+         print(f'{name}\t{status}')
+      elif name.startswith(service_name):
+         print(f'{service_name}\t{status}')
          return
-   return
   
    
 if __name__ == '__main__':

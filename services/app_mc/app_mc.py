@@ -47,8 +47,14 @@ def get_service_status(service_name):
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
       return jsonify({'message': f'Failt service {service_name} status', 'error': result.stderr.strip()})
-   else:
-      return jsonify({'message': f'Service {service_name} status', 'status': result.stdout.strip()})
+   
+   services = {}
+
+   for line in result.stdout.splitlines():
+      name, status = line.split('\t')
+      services[name] = status
+         
+   return jsonify(services)
 
 
 if __name__ == '__main__':

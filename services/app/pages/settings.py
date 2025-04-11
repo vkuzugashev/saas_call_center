@@ -17,16 +17,12 @@ def settings():
        Response: Ответ сервера.
    """
    url = current_app.config['MANAGEMENT_CONSOLE_URL']
-   services = ['asterisk', 'app', 'app_ami','app_call', 'app_db', 'app_snd_trns', 'app_rcv_trns', 'app_new_call', 'mariadb', 'redis', 'rabbitmq']  # замените на список ваших сервисов
    service_statuses = {}
-   for service in services:
-      response = requests.get(f'{url}/service/status/{service}')
-      if response.status_code == 200:
-         if 'status' in response.text:
-            service_statuses[service] = json.loads(response.text)['status']
-         else:
-            service_statuses[service] = 'Unknown'
-   
+
+   response = requests.get(f'{url}/service/status/all')
+   if response.status_code == 200:
+      service_statuses = json.loads(response.text)
+
    context = {
       'modules':  current_app.config['modules'],
       'services': service_statuses
