@@ -9,7 +9,7 @@ import requests
 load_dotenv()
 
 # Получение переменных окружения
-APP_URL = os.getenv('APP_URL')
+APP_URL = os.getenv('APP_URL','http://localhost:5000')
 MANAGER_USER = os.getenv('MANAGER_USER')
 MANAGER_PWD = os.getenv('MANAGER_PWD')
 ASTERISK_PATH = "../services/asterisk/conf"
