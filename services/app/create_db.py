@@ -19,6 +19,7 @@ MANAGER_PWD = os.getenv('MANAGER_PWD')
 
 # Формируем строку подключения к базе данных
 SQLALCHEMY_DATABASE_URI = f'{DB_DRIVER}+pymysql://{DB_USERNAME}:{DB_PWD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4'
+print(f'SQLALCHEMY_DATABASE_URI: {SQLALCHEMY_DATABASE_URI}')
 
 # Настраиваем приложение Flask
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
