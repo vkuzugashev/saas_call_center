@@ -147,6 +147,7 @@ def check_services():
       for service, status in services.items():
          if status.startswith('Exited'):
             command = [PYTHON_CMD, SERVICE_CONTROL_SCRIPT, 'start', service]
+            logger.info(f'Starting service: {service}')
             subprocess.run(command, capture_output=True, text=True)
 
    except Exception as e:
