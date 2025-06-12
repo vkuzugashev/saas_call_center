@@ -345,8 +345,12 @@ def build(service_name):
       
    new_env_lines = {}
 
-   db_username = os.environ.get('DB_USERNAME')
-   
+   db_name = os.environ.get('DB_NAME')   
+   if not db_name:
+      db_name = 'call_center'
+   new_env_lines['DB_NAME']=db_name   
+
+   db_username = os.environ.get('DB_USERNAME')   
    if not db_username:
       db_username = 'root'
    
@@ -466,7 +470,14 @@ def build(service_name):
       create_image('asterisk', asterisk_path)
    
    if service_name == 'all' or service_name == 'mariadb':
+      with open(os.path.join(mariadb_path,'init.sql'), 'wt') as f:
+         # Создаём базу данных
+         f.write(f'CREATE DATABASE IF NOT EXISTS {db_name};\r\n')
+         # Если нужно создать пользователя и назначить ему привилегии
+         f.write(f"GRANT ALL PRIVILEGES ON {db_name}.* TO '{db_username}'@'%' IDENTIFIED BY '{db_password}';\r\n")
+         f.write('FLUSH PRIVILEGES;\r\n')
       create_image('mariadb', mariadb_path)
+      os.remove(os.path.join(mariadb_path,'init.sql'))
    
    if service_name == 'all' or service_name == 'app':
       create_image('app', app_path)
@@ -528,7 +539,7 @@ def build(service_name):
    if service_name == 'all' or service_name == 'mariadb':
       create_container('mariadb', 'mariadb', {       
          'MARIADB_ROOT_PASSWORD': db_password,
-         'MARIADB_DATABASE': 'call_center'},
+         'MARIADB_DATABASE': db_name},
          {'3306': '3306'},
          {
             '../var/mariadb': '/var/lib/mysql'
@@ -588,8 +599,7 @@ def build(service_name):
          'MOD_RECORD': modules['MOD_RECORD'],
          'MOD_TRANSCRIPT': modules['MOD_TRANSCRIPT'],
          'MOD_NEW_CALL': modules['MOD_NEW_CALL'],
-         'MANAGEMENT_CONSOLE_URL': f'http://{local_ip}:8888'
-         
+         'MANAGEMENT_CONSOLE_URL': f'http://{local_ip}:8888'         
       }, {'5000': '5000'})
 
 

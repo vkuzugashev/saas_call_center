@@ -28,8 +28,8 @@ logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger("app_client")
 
 # Читаем переменные из .env
-DB_HOST = os.getenv('DB_HOST')
-DB_PORT = int(os.getenv('DB_PORT'))  # Порт преобразуем в целое число
+DB_HOST = os.getenv('DB_HOST','localhost')
+DB_PORT = int(os.getenv('DB_PORT', '3306'))  # Порт преобразуем в целое число
 DB_USERNAME = os.getenv('DB_USERNAME')
 DB_PWD = os.getenv('DB_PWD')
 DB_NAME = os.getenv('DB_NAME')

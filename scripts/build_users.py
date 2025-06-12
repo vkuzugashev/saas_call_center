@@ -85,12 +85,17 @@ if __name__ == '__main__':
 
     # проводим вход в систему
     session = requests.Session()
-    response1 = session.post(f"{APP_URL}/login", data={'username': MANAGER_USER, 'password': MANAGER_PWD})
-    if response1.status_code != 200:
-        print("Ошибка при входе в систему.", response1.status_code)
+    data = data={'username': MANAGER_USER, 'password': MANAGER_PWD}
+    response = session.post(f"{APP_URL}/login", data=data)
+    if response.status_code != 200:
+        print("Ошибка при входе в систему.", response.status_code)
         exit()
     
     print("Успешный вход в систему.")
+    
+    # Куки будут сохранены автоматически
+    for cookie_name, cookie_value in session.cookies.items():
+        print(f"{cookie_name}: {cookie_value}")
 
     # Запрос файла
     response = session.get(f"{APP_URL}/users/export_csv", params={'asterisk_hash': 'True'}, stream=True)
@@ -99,13 +104,13 @@ if __name__ == '__main__':
         exit()
     
     print("Файл успешно получен.")
-    
+
     # Сохранение файла на диск
     with open('users.csv', 'wb') as f:
-      for chunk in response.iter_content(chunk_size=1024):
-         if chunk:
-            f.write(chunk)
-      print("Файл сохранен на диск.")
+        for chunk in response.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+        print("Файл сохранен на диск.")
 
     # Генерация конфигурации
     users_configs, operator_members, extension_configs = generate_configuration('users.csv')
