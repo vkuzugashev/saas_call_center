@@ -256,9 +256,12 @@ def users_upload_csv():
                        existing_user.phone = phone
                        existing_user.queue = queue
                        existing_user.updated_at = upload_time
-                       # если пароль не задан оставляем прежний
-                       if password:
-                           existing_user.set_password(password.strip())
+                       if current_user.id == existing_user.id:
+                            flash('Вы не можете сменить парль у самого себя.', 'danger')
+                       else:
+                            # если пароль не задан оставляем прежний
+                            if password:
+                                existing_user.set_password(password.strip())
                    else:
                        # Создаем нового пользователя
                        if not password:

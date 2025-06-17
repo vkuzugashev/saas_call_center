@@ -345,25 +345,42 @@ def build(service_name):
       
    new_env_lines = {}
 
+   db_name = os.environ.get('DB_NAME')   
+   if not db_name:
+      db_name = 'call_center'
+   new_env_lines['DB_NAME']=db_name   
+
+   db_username = os.environ.get('DB_USERNAME')   
+   if not db_username:
+      db_username = 'root'
+   
+   new_env_lines['DB_USERNAME']=db_username   
+
    # Получаем пароль от БД
    db_password = os.environ.get('DB_PWD')
+   
    if not db_password:
       # Генерация пароля для root пользователя БД
       db_password = generate_password()
-      new_env_lines['DB_PWD']=db_password   
+   
+   new_env_lines['DB_PWD']=db_password   
 
    manager_user = os.environ.get('MANAGER_USER')
+   
    if not manager_user:
       # Генерация пароля для пользователя admin
       manager_user = 'admin'
-      new_env_lines['MANAGER_USER']=manager_user   
+   
+   new_env_lines['MANAGER_USER']=manager_user   
 
    # Получить пароль для пользователя admin для сайта
    manager_password = os.environ.get('MANAGER_PWD')
+   
    if not manager_password:
       # Генерация пароля для пользователя admin
       manager_password = generate_password()
-      new_env_lines['MANAGER_PWD']=manager_password   
+   
+   new_env_lines['MANAGER_PWD']=manager_password   
 
    # YOS
    YOS_ACCESS_KEY_ID = os.environ.get('YOS_ACCESS_KEY_ID')
@@ -376,56 +393,61 @@ def build(service_name):
 
    YOS_BUCKET_NAME = os.environ.get('YOS_BUCKET_NAME')
    if YOS_BUCKET_NAME:
-       new_env_lines['YOS_BUCKET_NAME']=YOS_BUCKET_NAME
+      new_env_lines['YOS_BUCKET_NAME']=YOS_BUCKET_NAME
    
    # SPEECH
    API_KEY = os.environ.get('API_KEY')
    if API_KEY:
-       new_env_lines['API_KEY']=API_KEY
+      new_env_lines['API_KEY']=API_KEY
    
    API_SECRET_KEY = os.environ.get('API_SECRET_KEY')
    if API_SECRET_KEY:
-       new_env_lines['API_SECRET_KEY']=API_SECRET_KEY
+      new_env_lines['API_SECRET_KEY']=API_SECRET_KEY
 
-   SPEECH_MODEL = os.environ.get('SPEECH_MODEL')
+   SPEECH_MODEL = os.environ.get('SPEECH_MODEL', 'general')
    if SPEECH_MODEL:
       new_env_lines['SPEECH_MODEL']=SPEECH_MODEL
 
-   # Создаем словарь с модулями
-   modules = {'MOD_STATISTIC': False, 'MOD_TRANSCRIPT': False, 'MOD_RECORD': False, 'MOD_NEW_CALL': False}
-   # копируем modules его в new_env_lines
-   new_env_lines.update(modules)
+   # Зададим значения модулей если уже заданы или по умолчанию
+   modules = {}
 
-   # Взять значения модулей из файла .env
-   with open('.env', 'r', encoding='utf-8') as f:
-      env_lines = f.readlines()
-      
-      for line in env_lines:
-         if line.strip() != '' and not line.startswith('#'):
-            key, value = line.strip().split('=')
-            # Удалим пробелы в ключах и значениях
-            key = key.strip().upper()
-            key_value = value.strip().lower()
-            if key == 'MOD_STATISTIC':
-               modules[key] = key_value == 'true'
-               new_env_lines[key] = key_value == 'true'
-            elif key == 'MOD_TRANSCRIPT':
-               modules[key] = key_value == 'true'
-               new_env_lines[key] = key_value == 'true'
-            elif key == 'MOD_RECORD':
-               modules[key] = key_value == 'true'
-               new_env_lines[key] = key_value == 'true'
-            elif key == 'MOD_NEW_CALL':
-               modules[key] = key_value == 'true'
-               new_env_lines[key] = key_value == 'true'
-            else:
-               new_env_lines[key] = value
-             
+   MOD_RECORD = os.environ.get('MOD_RECORD', 'false').strip().lower()
+   if MOD_RECORD:
+      MOD_RECORD = MOD_RECORD == 'true'
+      modules['MOD_RECORD'] = MOD_RECORD
+      new_env_lines['MOD_RECORD'] = MOD_RECORD
+
+   MOD_NEW_CALL = os.environ.get('MOD_NEW_CALL', 'false').strip().lower()
+   if MOD_NEW_CALL:
+      MOD_NEW_CALL = MOD_NEW_CALL == 'true'
+      modules['MOD_NEW_CALL'] = MOD_NEW_CALL
+      new_env_lines['MOD_NEW_CALL'] = MOD_NEW_CALL
+   
+   MOD_STATISTIC = os.environ.get('MOD_STATISTIC', 'false').strip().lower()
+   if MOD_STATISTIC:
+      MOD_STATISTIC = MOD_STATISTIC == 'true'
+      modules['MOD_STATISTIC'] = MOD_STATISTIC
+      new_env_lines['MOD_STATISTIC'] = MOD_STATISTIC
+   
+   MOD_TRANSCRIPT = os.environ.get('MOD_TRANSCRIPT', 'false').strip().lower()
+   if MOD_TRANSCRIPT:
+      MOD_TRANSCRIPT = MOD_TRANSCRIPT == 'true'
+      modules['MOD_TRANSCRIPT'] = MOD_TRANSCRIPT
+      new_env_lines['MOD_TRANSCRIPT'] = MOD_TRANSCRIPT
+            
    # Сохранить значения new_env_lines обратно в файл .env
    with open('.env', 'w', encoding='utf-8') as f:
       for key, value in new_env_lines.items():
          key = key.strip().upper()
          f.write(f'{key}={value}\n')
+
+   # Сохранить минимум значений для создания БД
+   with open(os.path.join(app_path,'.env'), 'w', encoding='utf-8') as f:
+      for key, value in new_env_lines.items():
+         if key in ['DB_USERNAME', 'DB_PWD', 'MANAGER_USER', 'MANAGER_PWD']:
+            key = key.strip().upper()
+            f.write(f'{key}={value}\n')
+
 
    # Остановка контейнеров   
    stop(service_name)
@@ -448,7 +470,14 @@ def build(service_name):
       create_image('asterisk', asterisk_path)
    
    if service_name == 'all' or service_name == 'mariadb':
+      with open(os.path.join(mariadb_path,'init.sql'), 'wt') as f:
+         # Создаём базу данных
+         f.write(f'CREATE DATABASE IF NOT EXISTS {db_name};\r\n')
+         # Если нужно создать пользователя и назначить ему привилегии
+         f.write(f"GRANT ALL PRIVILEGES ON {db_name}.* TO '{db_username}'@'%' IDENTIFIED BY '{db_password}';\r\n")
+         f.write('FLUSH PRIVILEGES;\r\n')
       create_image('mariadb', mariadb_path)
+      os.remove(os.path.join(mariadb_path,'init.sql'))
    
    if service_name == 'all' or service_name == 'app':
       create_image('app', app_path)
@@ -510,7 +539,7 @@ def build(service_name):
    if service_name == 'all' or service_name == 'mariadb':
       create_container('mariadb', 'mariadb', {       
          'MARIADB_ROOT_PASSWORD': db_password,
-         'MARIADB_DATABASE': 'call_center'},
+         'MARIADB_DATABASE': db_name},
          {'3306': '3306'},
          {
             '../var/mariadb': '/var/lib/mysql'
@@ -570,8 +599,7 @@ def build(service_name):
          'MOD_RECORD': modules['MOD_RECORD'],
          'MOD_TRANSCRIPT': modules['MOD_TRANSCRIPT'],
          'MOD_NEW_CALL': modules['MOD_NEW_CALL'],
-         'MANAGEMENT_CONSOLE_URL': f'http://{local_ip}:8888'
-         
+         'MANAGEMENT_CONSOLE_URL': f'http://{local_ip}:8888'         
       }, {'5000': '5000'})
 
 

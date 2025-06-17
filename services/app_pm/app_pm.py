@@ -55,9 +55,9 @@ def build_service(service_name):
    command = [PYTHON_CMD, SERVICE_CONTROL_SCRIPT, 'build', service_name]
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
-      return jsonify({'message': f'Failt service {service_name} built', 'error': result.stderr})
+      return jsonify({'message': f'Failt service {service_name} built', 'error': result.stderr}), 500
    else:
-      return jsonify({'message': f'Service {service_name} built'})
+      return jsonify({'message': f'Service {service_name} built'}), 200
 
 @app.route('/service/stop/<service_name>', methods=['GET','POST'])
 def stop_service(service_name):
@@ -95,9 +95,9 @@ def start_service(service_name):
    command = [PYTHON_CMD, SERVICE_CONTROL_SCRIPT, 'start', service_name]
    result = subprocess.run(command, capture_output=True, text=True)
    if result.returncode != 0:
-      return jsonify({'message': f'Failt service {service_name} start', 'error': result.stderr})
+      return jsonify({'message': f'Failt service {service_name} start', 'error': result.stderr}), 500
    else:
-      return jsonify({'message': f'Service {service_name} started'})
+      return jsonify({'message': f'Service {service_name} started'}), 200
 
 @app.route('/service/status/<service_name>', methods=['GET'])
 def get_service_status(service_name):
@@ -147,6 +147,7 @@ def check_services():
       for service, status in services.items():
          if status.startswith('Exited'):
             command = [PYTHON_CMD, SERVICE_CONTROL_SCRIPT, 'start', service]
+            logger.info(f'Starting service: {service}')
             subprocess.run(command, capture_output=True, text=True)
 
    except Exception as e:

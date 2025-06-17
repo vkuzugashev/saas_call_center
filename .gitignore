@@ -166,3 +166,5 @@ cython_debug/
 calls.db:
 beta_test/
 
+tree.txt
+scripts/users_old.csv
