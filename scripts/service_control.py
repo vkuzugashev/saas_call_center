@@ -10,6 +10,7 @@ import socket
 
 from dotenv import load_dotenv
 
+logging.basicConfig(level='INFO')
 logger = logging.getLogger("service_control")
 
 SERVICE_PATH = '../services/'
@@ -34,6 +35,15 @@ def get_docker_cmd():
       return 'docker'
    elif system == 'linux':
       return 'podman'
+   else:
+       raise RuntimeError("Unsupported OS")
+
+def get_python_cmd():
+   system = platform.system().lower()
+   if system == 'windows':
+      return 'py'
+   elif system == 'linux':
+      return 'python3'
    else:
        raise RuntimeError("Unsupported OS")
 
@@ -242,38 +252,79 @@ def stop_container(container_name):
    else:
        logger.info(f"Контейнер {container_name} успешно остановлен.")
 
-def remove():
+def remove(service_name):
    """
-   Функция для удаления сервисов.
+   Функция для удаления контейнеров и образов Docker для сервиса.
    """
    # Удаление контейнеров
-   remove_container('asterisk')
-   remove_container('rabbitmq')
-   remove_container('redis')
-   remove_container('mariadb')
-   remove_container('app_ami')
-   remove_container('app_call')
-   remove_container('app_call')
-   remove_container('app_db')
-   remove_container('app_new_call')
-   remove_container('app_rcv')
-   remove_container('app_snd')
-   remove_container('app')
+   if service_name == 'all' or service_name == 'asterisk':
+      remove_container('asterisk')
+   
+   if service_name == 'all' or service_name == 'rabbitmq':
+      remove_container('rabbitmq')
+
+   if service_name == 'all' or service_name == 'redis':
+      remove_container('redis')
+   
+   if service_name == 'all' or service_name == 'mariadb':
+      remove_container('mariadb')
+   
+   if service_name == 'all' or service_name == 'app_ami':      
+      remove_container('app_ami')
+
+   if service_name == 'all' or service_name == 'app_call':
+      remove_container('app_call')
+
+   if service_name == 'all' or service_name == 'app_db':
+      remove_container('app_db')
+   
+   if service_name == 'all' or service_name == 'app_new_call':
+      remove_container('app_new_call')
+   
+   if service_name == 'all' or service_name == 'app_rcv':
+      remove_container('app_rcv')
+   
+   if service_name == 'all' or service_name == 'app_snd':
+      remove_container('app_snd')
+   
+   if service_name == 'all' or service_name == 'app':
+      remove_container('app')
    
    # Удаление образов
-   remove_image('asterisk')
-   remove_image('rabbitmq')
-   remove_image('redis')
-   remove_image('mariadb')
-   remove_image('app_ami')
-   remove_image('app_call')
-   remove_image('app_db')
-   remove_image('app_new_call')
-   remove_image('app_rcv')
-   remove_image('app_snd')
-   remove_image('app')
+   if service_name == 'all' or service_name == 'asterisk':
+      remove_image('asterisk')
 
-def build():
+   if service_name == 'all' or service_name == 'rabbitmq':
+      remove_image('rabbitmq')
+
+   if service_name == 'all' or service_name == 'redis':
+      remove_image('redis')
+
+   if service_name == 'all' or service_name == 'mariadb':
+      remove_image('mariadb')
+
+   if service_name == 'all' or service_name == 'app_ami':
+      remove_image('app_ami')
+
+   if service_name == 'all' or service_name == 'app_call':
+      remove_image('app_call')
+
+   if service_name == 'all' or service_name == 'app_db':
+      remove_image('app_db')
+
+   if service_name == 'all' or service_name == 'app_new_call':
+      remove_image('app_new_call')
+
+   if service_name == 'all' or service_name == 'app_rcv':
+      remove_image('app_rcv')
+
+   if service_name == 'all' or service_name == 'app_snd':
+      remove_image('app_snd')
+
+   if service_name == 'all' or service_name == 'app':
+      remove_image('app')
+
+def build(service_name):
    """
    Функция для создания сервисов.
    """
@@ -377,144 +428,267 @@ def build():
          f.write(f'{key}={value}\n')
 
    # Остановка контейнеров   
-   stop()
-   # Удаление образов
-   remove()
+   stop(service_name)
+
+   # Удаление контейнеров
+   remove(service_name)
 
    # Создание образов только тех, что требуется
-   create_image('asterisk', asterisk_path)
-   create_image('mariadb', mariadb_path)
-   create_image('app', app_path)
+   if service_name == 'all' or service_name == 'asterisk':
+      if service_name == 'asterisk':
+         # Вызвать скрипт build_users.py для создания пользователей
+         py = get_python_cmd()
+         command = [py, 'build_users.py']
+         result = subprocess.run(command, capture_output=True, text=True)
+         if result.returncode != 0:
+            raise RuntimeError(f"Ошибка при запуска build_users.py: {result.stderr}")
+         else:
+            logger.info("Скрипт build_users.py успешно выполнен.")
+      
+      create_image('asterisk', asterisk_path)
    
-   if modules['MOD_STATISTIC']:       
+   if service_name == 'all' or service_name == 'mariadb':
+      create_image('mariadb', mariadb_path)
+   
+   if service_name == 'all' or service_name == 'app':
+      create_image('app', app_path)
+   
+   if modules['MOD_STATISTIC']:
       # Создание образов
-      create_image('rabbitmq', rabbitmq_path)
-      create_image('redis', redis_path)
-      create_image('app_ami', app_ami_path)
-      create_image('app_call', app_call_path)
-      create_image('app_db', app_db_path)
+      if service_name == 'all' or service_name == 'rabbitmq':
+         create_image('rabbitmq', rabbitmq_path)
+
+      if service_name =='all' or service_name == 'redis':
+         create_image('redis', redis_path)
+      
+      if service_name == 'all' or service_name == 'app_ami':
+         create_image('app_ami', app_ami_path)
+
+      if service_name == 'all' or service_name == 'app_call':
+         create_image('app_call', app_call_path)
+
+      if service_name == 'all' or service_name == 'app_db':
+         create_image('app_db', app_db_path)
    
    if modules['MOD_RECORD']:
       None
    
    if modules['MOD_TRANSCRIPT']:
       # Создание образов
-      create_image('app_rcv', app_rcv_path)
-      create_image('app_snd', app_snd_path)
+      if service_name == 'all' or service_name == 'app_rcv':
+         create_image('app_rcv', app_rcv_path)
+      
+      if service_name == 'all' or service_name == 'app_snd':
+         create_image('app_snd', app_snd_path)
 
    if modules['MOD_NEW_CALL']:
       # Создание образов
-      create_image('app_new_call', app_new_call_path)
+      if service_name == 'all' or service_name == 'app_new_call':
+         create_image('app_new_call', app_new_call_path)
 
-   # Запуск контейнеров если созданы образы
-   create_container('asterisk', 'asterisk',{}, {  
-      '5060':'5060/udp',
-      '5038':'5038',
-      '10000-10100':'10000-10100/udp',
-      '8088':'8088'
-   },{
-       os.path.join(asterisk_path,'sounds'): '/var/lib/asterisk/sounds',
-       '../var/asterisk/monitor':'/var/spool/asterisk/monitor',
-       '../var/asterisk/log':'/var/log/asterisk'
-   })
-   create_container('rabbitmq', 'rabbitmq', {},{'5672':'5672'})
-   create_container('redis', 'redis', {}, {'6379': '6379'})
-   create_container('mariadb', 'mariadb', {       
-      'MARIADB_ROOT_PASSWORD': db_password,
-      'MARIADB_DATABASE': 'call_center'},
-      {'3306': '3306'},
-      {
-         '../var/mariadb': '/var/lib/mysql'
-      })   
-   create_container('app_ami', 'app_ami', {
-       'ASTERISK_HOST': local_ip,
-       'RABBIT_HOST': local_ip,
-   },{})
-   create_container('app_call', 'app_call', {
-        'RABBIT_HOST': local_ip,
-        'REDIS_HOST': local_ip
-   },{})
-   create_container('app_db', 'app_db', {
-       'RABBIT_HOST': local_ip,
-       'DB_HOST': local_ip,
-       'DB_PWD': db_password,
-   },{})
-   create_container('app_new_call', 'app_new_call', {},{})
-   create_container('app_rcv', 'app_rcv', {
-       'DB_HOST': local_ip,
-       'DB_PWD': db_password,
-       'API_KEY': API_KEY,
-       'API_SECRET_KEY': API_SECRET_KEY
-   },{})
-   create_container('app_snd', 'app_snd', {
-       'DB_HOST': local_ip,
-       'DB_PWD': db_password,
-       'RECORD_URL_PREFIX': f'http://{local_ip}:8088/static/monitor/',
-       'YOS_ACCESS_KEY_ID': YOS_ACCESS_KEY_ID,
-       'YOS_SECRET_ACCESS_KEY': YOS_SECRET_ACCESS_KEY,
-       'YOS_BUCKET_NAME': YOS_BUCKET_NAME,
-       'API_KEY': API_KEY,
-       'API_SECRET_KEY': API_SECRET_KEY,
-       'SPEECH_MODEL': SPEECH_MODEL
-   },{})
-   create_container('app', 'app', {
-      'DB_HOST': local_ip,
-      'DB_PWD': db_password,
-      'MANAGER_USER': manager_user,
-      'MANAGER_PWD': manager_password,
-      'RECORD_URL': f'http://{local_ip}:8088/static/monitor'
-   }, {'5000': '5000'})
+   if service_name == 'all' or service_name == 'asterisk':
+      # Запуск контейнеров если созданы образы
+      create_container('asterisk', 'asterisk',{
+         'MOD_RECORD': modules['MOD_RECORD'],
+      }, {  
+         '5060':'5060/udp',
+         '5038':'5038',
+         '10000-10100':'10000-10100/udp',
+         '8088':'8088'
+      },{
+         os.path.join(asterisk_path,'sounds'): '/var/lib/asterisk/sounds',
+         '../var/asterisk/monitor':'/var/spool/asterisk/monitor',
+         '../var/asterisk/log':'/var/log/asterisk'
+      })
 
-def start():
+   if service_name == 'all' or service_name == 'rabbitmq':
+      create_container('rabbitmq', 'rabbitmq', {},{'5672':'5672'})
+   
+   if service_name == 'all' or service_name == 'redis':
+      create_container('redis', 'redis', {}, {'6379': '6379'})
+
+   if service_name == 'all' or service_name == 'mariadb':
+      create_container('mariadb', 'mariadb', {       
+         'MARIADB_ROOT_PASSWORD': db_password,
+         'MARIADB_DATABASE': 'call_center'},
+         {'3306': '3306'},
+         {
+            '../var/mariadb': '/var/lib/mysql'
+         })
+   
+   if service_name == 'all' or service_name == 'app_ami':
+      create_container('app_ami', 'app_ami', {
+         'ASTERISK_HOST': local_ip,
+         'RABBIT_HOST': local_ip,
+      },{})
+   
+   if service_name == 'all' or service_name == 'app_call':
+      create_container('app_call', 'app_call', {
+         'RABBIT_HOST': local_ip,
+         'REDIS_HOST': local_ip
+      },{})
+
+   if service_name == 'all' or service_name == 'app_db':
+      create_container('app_db', 'app_db', {
+         'RABBIT_HOST': local_ip,
+         'DB_HOST': local_ip,
+         'DB_PWD': db_password,
+      },{})
+   
+   if service_name == 'all' or service_name == 'app_new_call':
+      create_container('app_new_call', 'app_new_call', {},{})
+   
+   if service_name == 'all' or service_name == 'app_rcv':
+      create_container('app_rcv', 'app_rcv', {
+         'DB_HOST': local_ip,
+         'DB_PWD': db_password,
+         'API_KEY': API_KEY,
+         'API_SECRET_KEY': API_SECRET_KEY
+      },{})
+   
+   if service_name == 'all' or service_name == 'app_snd':
+      create_container('app_snd', 'app_snd', {
+         'DB_HOST': local_ip,
+         'DB_PWD': db_password,
+         'RECORD_URL_PREFIX': f'http://{local_ip}:8088/static/monitor/',
+         'YOS_ACCESS_KEY_ID': YOS_ACCESS_KEY_ID,
+         'YOS_SECRET_ACCESS_KEY': YOS_SECRET_ACCESS_KEY,
+         'YOS_BUCKET_NAME': YOS_BUCKET_NAME,
+         'API_KEY': API_KEY,
+         'API_SECRET_KEY': API_SECRET_KEY,
+         'SPEECH_MODEL': SPEECH_MODEL
+      },{})
+   
+   if service_name == 'all' or service_name == 'app':
+      create_container('app', 'app', {
+         'DB_HOST': local_ip,
+         'DB_PWD': db_password,
+         'MANAGER_USER': manager_user,
+         'MANAGER_PWD': manager_password,
+         'RECORD_URL': f'http://{local_ip}:8088/static/monitor',
+         'MOD_STATISTIC': modules['MOD_STATISTIC'],
+         'MOD_RECORD': modules['MOD_RECORD'],
+         'MOD_TRANSCRIPT': modules['MOD_TRANSCRIPT'],
+         'MOD_NEW_CALL': modules['MOD_NEW_CALL'],
+         'MANAGEMENT_CONSOLE_URL': f'http://{local_ip}:8888'
+         
+      }, {'5000': '5000'})
+
+
+def start(service_name):
    """
-   Функция для запуска сервисов.
+   Функция для запуска сервисных контейнеров.
    """
    # Запуск контейнеров
-   start_container('asterisk')
-   start_container('rabbitmq')
-   start_container('redis')
-   start_container('mariadb')
-   # Задержка 10 сек для того чтобы все запустилось
-   time.sleep(10)
+   if service_name == 'all' or service_name == 'asterisk':
+      start_container('asterisk')
 
-   start_container('app_ami')
-   start_container('app_call')
-   start_container('app_db')
-   start_container('app', ['python', os.path.join(SERVICE_PATH,'app/create_db.py')])
-   start_container('app_rcv')
-   start_container('app_snd')
-   start_container('app_new_call')
+   if service_name == 'all' or service_name == 'rabbitmq':
+      start_container('rabbitmq')
+   
+   if service_name == 'all' or service_name == 'redis':
+      start_container('redis')
+   
+   if service_name == 'all' or service_name == 'mariadb':
+      start_container('mariadb')   
+      # Задержка 10 сек для того чтобы все запустилось
+      time.sleep(10)
 
-def stop():
+   if service_name == 'all' or service_name == 'app_ami':
+      start_container('app_ami')
+   
+   if service_name == 'all' or service_name == 'app_call':
+      start_container('app_call')
+
+   if service_name == 'all' or service_name == 'app_db':
+      start_container('app_db')
+
+   if service_name == 'all' or service_name == 'app':
+      py = get_python_cmd()      
+      start_container('app', [py, os.path.join(SERVICE_PATH,'app/create_db.py')])
+   
+   if service_name == 'all' or service_name == 'app_rcv':
+      start_container('app_rcv')
+
+   if service_name == 'all' or service_name == 'app_snd':
+      start_container('app_snd')
+
+   if service_name == 'all' or service_name == 'app_new_call':
+      start_container('app_new_call')
+
+def stop(service_name):
    """
-   Функция для остановки сервисов.
+   Функция для остановки сервисных контейнеров.
    """
    # Остановка контейнеров
-   stop_container('app')
-   stop_container('app_rcv')
-   stop_container('app_snd')
-   stop_container('app_db')
-   stop_container('app_call')
-   stop_container('app_ami')
-   stop_container('app_new_call')
-   stop_container('asterisk')
-   stop_container('rabbitmq')
-   stop_container('redis')
-   stop_container('mariadb')
+   if service_name == 'all' or service_name == 'app':
+      stop_container('app')
 
+   if service_name == 'all' or service_name == 'app_rcv':
+      stop_container('app_rcv')
+   
+   if service_name == 'all' or service_name == 'app_snd':
+      stop_container('app_snd')
+
+   if service_name == 'all' or service_name == 'app_db':      
+      stop_container('app_db')
+   
+   if service_name == 'all' or service_name == 'app_call':
+      stop_container('app_call')
+
+   if service_name == 'all' or service_name == 'app_ami':
+      stop_container('app_ami')
+
+   if service_name == 'all' or service_name == 'app_new_call':
+      stop_container('app_new_call')
+   
+   if service_name == 'all' or service_name == 'asterisk':
+      stop_container('asterisk')
+
+   if service_name == 'all' or service_name == 'rabbitmq':
+      stop_container('rabbitmq')
+   
+   if service_name == 'all' or service_name == 'redis':
+      stop_container('redis')
+
+   if service_name == 'all' or service_name == 'mariadb':
+      stop_container('mariadb')
+
+def service_status(service_name):
+   """
+   Функция для получения статуса сервисных контейнеров.
+   """
+   docker = get_docker_cmd()
+   command = [docker, 'ps', '-a', '--format', '{{.Names}}\t{{.Status}}']
+   result = subprocess.run(command, capture_output=True, text=True)
+   if result.returncode != 0:
+      raise RuntimeError(f"Ошибка при получении статуса сервисов: {result.stderr}")
+
+   for line in result.stdout.splitlines():
+      name, status = line.split('\t')
+      if service_name == 'all':
+         print(f'{name}\t{status}')
+      elif name.startswith(service_name):
+         print(f'{service_name}\t{status}')
+         return
+  
+   
 if __name__ == '__main__':
-   if len(sys.argv) != 2:
-       logger.info("Использование: py | python3 service_control.py [build|start|stop]")
+   if len(sys.argv) < 3:
+       logger.info("Использование: py | python3 service_control.py [build|start|stop] service_name")
        sys.exit(1)
    
    command = sys.argv[1]
+   service_name = sys.argv[2]
    
    if command == 'build':
-       build()
+       build(service_name)
    elif command == 'start':
-       start()
+       start(service_name)
    elif command == 'stop':
-       stop()
+       stop(service_name)
+   elif command == 'status':
+       service_status(service_name)
    else:
        logger.warning("Недопустимая команда.")
        sys.exit(1)

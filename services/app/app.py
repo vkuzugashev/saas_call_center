@@ -44,6 +44,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Настройки пользователя администратора
 app.config['MANAGER_USER'] = os.getenv('MANAGER_USER')
 
+app.config['MANAGEMENT_CONSOLE_URL'] = os.getenv('MANAGEMENT_CONSOLE_URL')
 
 # Инициализируем DB
 db.init_app(app)
@@ -95,7 +96,7 @@ def login():
            logger.debug(f'Logged username: {username}, password: {password}')
            return redirect(url_for('index'))
 
-       flash('Неправильное имя пользователя или пароль.')
+       flash('Неправильное имя пользователя или пароль.', 'danger')
 
    return render_template('login.html')
 
@@ -131,7 +132,7 @@ def register():
        existing_user = User.query.filter_by(username=username).first()
 
        if existing_user:
-           flash('Имя пользователя уже занято.')
+           flash('Имя пользователя уже занято.', 'danger')
            return redirect(url_for('register'))
 
        new_user = User(
@@ -143,7 +144,7 @@ def register():
        db.session.add(new_user)
        db.session.commit()
 
-       flash('Аккаунт успешно создан!')
+       flash('Аккаунт успешно создан!', 'success')
        return redirect(url_for('login'))
 
    return render_template('register.html')
@@ -158,4 +159,4 @@ app.register_blueprint(contacts_bp)
 
 if __name__ == '__main__':
     app.config['modules'] = get_modules_settings()
-    app.run( host='0.0.0.0', port=5000, debug=DEBUG)
+    app.run(host='0.0.0.0', port=5000, debug=DEBUG)

@@ -6,6 +6,7 @@ import os
 import tempfile
 from flask import Blueprint, current_app, flash, make_response, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
+import requests
 
 from models import db, User
 
@@ -303,3 +304,21 @@ def users_upload_csv():
 
    else:
        return render_template('users_upload_file.html')
+
+@users_bp.route('/users/restart/asterisk', methods=['GET'])
+def restart_asterisk():
+   url = current_app.config['MANAGEMENT_CONSOLE_URL']
+   response = requests.get(f'{url}/service/build/asterisk')
+   if response.status_code == 200:
+      flash('Asterisk build successful', 'success')
+   else:
+      flash(f'Asterisk build failed, {response.text}', 'danger')
+      return redirect(url_for('users_bp.show_users'))
+    
+   response = requests.get(f'{url}/service/start/asterisk')
+   if response.status_code == 200:
+      flash('Asterisk start successful', 'success')
+   else:
+      flash(f'Asterisk start failed, {response.text}', 'danger')
+
+   return redirect(url_for('users_bp.show_users'))

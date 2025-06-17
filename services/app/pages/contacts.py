@@ -5,7 +5,7 @@ import logging
 from operator import or_
 import os
 import tempfile
-from flask import Blueprint, flash, make_response, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, make_response, redirect, render_template, request, url_for
 from flask_login import login_required
 
 from models import db, Contact
@@ -28,7 +28,7 @@ def contacts():
        ).all()
    else:
        contacts = Contact.query.all()
-   return render_template('contacts.html', contacts=contacts, search=search)
+   return render_template('contacts.html', contacts=contacts, search=search, modules = current_app.config['modules'])
 
 @contacts_bp.route('/contacts/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -48,7 +48,7 @@ def edit_contact(id):
        db.session.commit()
        flash('Контакт успешно обновлен!', 'success')
        return redirect(url_for('contacts_bp.contacts'))
-   return render_template('edit_contact.html', contact=contact)
+   return render_template('edit_contact.html', contact=contact, modules = current_app.config['modules'])
 
 
 @contacts_bp.route('/contacts/<int:id>/delete', methods=['GET', 'POST'])
@@ -60,7 +60,7 @@ def delete_contact(id):
        db.session.commit()
        flash('Контакт успешно удален!', 'success')
        return redirect(url_for('contacts_bp.contacts'))
-   return render_template('delete_contact.html', contact=contact)
+   return render_template('delete_contact.html', contact=contact, modules = current_app.config['modules'])
 
 @contacts_bp.route('/contacts/download', methods=['GET'])
 @login_required
@@ -151,5 +151,5 @@ def upload_contacts():
        os.remove(filepath)
        return redirect(url_for('contacts_bp.contacts'))
    else:
-       return render_template('upload_contacts.html')
+       return render_template('upload_contacts.html', modules = current_app.config['modules'])
 
