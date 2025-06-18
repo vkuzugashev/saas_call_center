@@ -561,6 +561,7 @@ def build(service_name):
       create_container('app_db', 'app_db', {
          'RABBIT_HOST': local_ip,
          'DB_HOST': local_ip,
+         'DB_USERNAME': db_username,
          'DB_PWD': db_password,
       },{})
    
@@ -574,6 +575,8 @@ def build(service_name):
    if service_name == 'all' or service_name == 'app_rcv':
       create_container('app_rcv', 'app_rcv', {
          'DB_HOST': local_ip,
+         'DB_NAME': db_name,
+         'DB_USERNAME': db_username,
          'DB_PWD': db_password,
          'API_KEY': API_KEY,
          'API_SECRET_KEY': API_SECRET_KEY
@@ -582,6 +585,8 @@ def build(service_name):
    if service_name == 'all' or service_name == 'app_snd':
       create_container('app_snd', 'app_snd', {
          'DB_HOST': local_ip,
+         'DB_NAME': db_name,
+         'DB_USERNAME': db_username,
          'DB_PWD': db_password,
          'RECORD_URL_PREFIX': f'http://{local_ip}:8088/static/monitor/',
          'YOS_ACCESS_KEY_ID': YOS_ACCESS_KEY_ID,
@@ -595,6 +600,7 @@ def build(service_name):
    if service_name == 'all' or service_name == 'app':
       create_container('app', 'app', {
          'DB_HOST': local_ip,
+         'DB_USERNAME': db_username,
          'DB_PWD': db_password,
          'MANAGER_USER': manager_user,
          'MANAGER_PWD': manager_password,

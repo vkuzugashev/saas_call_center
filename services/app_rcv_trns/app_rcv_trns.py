@@ -11,7 +11,7 @@ load_dotenv()
 
 # Переменные окружения
 # Настройки БД
-DB_USER = os.getenv("DB_USER")
+DB_USER = os.getenv("DB_USERNAME")
 DB_PWD = os.getenv("DB_PWD")
 DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DB_NAME")

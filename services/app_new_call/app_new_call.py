@@ -41,12 +41,6 @@ def get_client_info(msisdn):
         logger.error(f"Ошибка при запросе информации о клиенте: {e}")
         return None
 
-# def get_client_info(msisdn):
-#     """Функция для получения информации о клиенте по MSISDN"""
-#     response = requests.get(f'http://localhost:8000/clients/{msisdn}')
-#     content = response.json()
-
-
 # async def check_websocket_clients_activity():
 #     global clients
 #     while True:
