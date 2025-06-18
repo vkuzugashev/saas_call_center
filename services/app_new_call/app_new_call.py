@@ -8,7 +8,7 @@ load_dotenv()
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
 RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
-WEBSOCKET_HOST = os.environ.get('WEBSOCKET_HOST', 'localhost')
+WEBSOCKET_HOST = os.environ.get('WEBSOCKET_HOST', '0.0.0.0')
 WEBSOCKET_PORT = os.environ.get('WEBSOCKET_PORT', 5078)
 CLIENT_INFO_URL = os.environ.get('CLIENT_INFO_URL', 'http://localhost:8000/clients')
 RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE', 'events')
@@ -24,14 +24,28 @@ lock = asyncio.Lock()
 @lru_cache(maxsize=None)
 def get_client_info(msisdn):
     """Функция для получения информации о клиенте по MSISDN"""
-    response = requests.get(f'{CLIENT_INFO_URL}/{msisdn}')
-    content = response.json()
-    if response.status_code == 200:
-        return content
-    elif response.status_code == 404:
+    try:
+        if CLIENT_INFO_URL:
+            response = requests.get(f'{CLIENT_INFO_URL}/{msisdn}')
+            content = response.json()
+            if response.status_code == 200:
+                return content
+            elif response.status_code == 404:
+                return None
+            else:
+                logger.warning(f"Получен неожидаемый статус код: {response.status_code}")
+                return None
+        else:
+            return None
+    except Exception as e:
+        logger.error(f"Ошибка при запросе информации о клиенте: {e}")
         return None
-    else:
-        raise Exception(f"Получен неожидаемый статус код: {response.status_code}")
+
+# def get_client_info(msisdn):
+#     """Функция для получения информации о клиенте по MSISDN"""
+#     response = requests.get(f'http://localhost:8000/clients/{msisdn}')
+#     content = response.json()
+
 
 # async def check_websocket_clients_activity():
 #     global clients
@@ -45,6 +59,9 @@ def get_client_info(msisdn):
 #                 clients.remove(client)
 #             await asyncio.sleep(LAST_ACTIVITY_TIMEOUT / 2)
 
+def get_default_client_info(msisdn):
+    return {'msisdn': msisdn,'client_id': 'Неизвестный номер', 'contracts': ()}
+
 async def handle_incoming_message(message):    
     """Обработчик входящих сообщений из очереди RabbitMQ"""
     try:
@@ -54,12 +71,14 @@ async def handle_incoming_message(message):
         if event['event'] == 'DialBegin':
             caller = event['params']['CallerIDNum']
             message = get_client_info(caller)
-            if message is not None:        
-                if clients:
-                    text = json.dumps(message)
-                    logger.info('Отправка websocket клиентам сообщения:', text)
-                    for client in clients:
-                        await client.send(text) 
+            if message is None:
+                message = get_default_client_info(caller)
+                       
+            if clients:
+                text = json.dumps(message)
+                logger.info('Отправка websocket клиентам сообщения:', text)
+                for client in clients:
+                    await client.send(text) 
     except KeyError as e:
         logger.error(f"KeyError occurred: {e}. Event data: {event}")
     except json.JSONDecodeError as e:
