@@ -10,6 +10,7 @@ RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
 RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
+REDIS_KEY_EXPIRE = int(os.environ.get('REDIS_KEY_EXPIRE', '3600'))
 CLIENT_URL = os.environ.get('CLIENT_URL', "")
 RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE', 'events')
 RABBIT_EVENTS_QUEUE = os.environ.get('RABBIT_EVENTS_QUEUE', 'events')
@@ -37,7 +38,7 @@ def redis_get(key):
 def redis_set(key, value):
     r = get_redis_client()
     str_call = json.dumps(value)
-    r.set(key, str_call, ex=3600)
+    r.set(key, str_call, ex=REDIS_KEY_EXPIRE)
     logger.debug(f'Stored in redis: {key} -> {str_call}')
     
 def get_client_id(msisdn):
@@ -110,9 +111,6 @@ def store_to_queue(call,**kwargs):
                               routing_key='calls',
                               body=json.dumps(call))
     
-def set_call(key):
-    r = get_redis_client()
-    r.setex(key, 60)
     
 def event_parse_and_route(body):    
     event = json.loads(body)

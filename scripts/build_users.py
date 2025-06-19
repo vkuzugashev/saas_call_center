@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     # проводим вход в систему
     session = requests.Session()
-    data = data={'username': MANAGER_USER, 'password': MANAGER_PWD}
+    data = {'username': MANAGER_USER, 'password': MANAGER_PWD}
     response = session.post(f"{APP_URL}/login", data=data)
     if response.status_code != 200:
         print("Ошибка при входе в систему.", response.status_code)

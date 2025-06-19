@@ -11,6 +11,7 @@ ADD conf/rtp.conf /etc/asterisk/rtp.conf
 ADD conf/extensions.conf /etc/asterisk/extensions.conf
 ADD conf/pjsip.conf /etc/asterisk/pjsip.conf
 ADD conf/users.conf /etc/asterisk/users.conf
+ADD conf/cdr.conf /etc/asterisk/cdr.conf
 ADD conf/users_template.conf /etc/asterisk/users_template.conf
 ADD conf/users_extensions.conf /etc/asterisk/users_extensions.conf
 ADD conf/queues.conf etc/asterisk/queues.conf
