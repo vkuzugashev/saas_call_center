@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Кнопка-триггер модального окна -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#callModal">
+  Открыть
+</button>
+
+  <!-- Модальное окно -->
+  <div class="modal fade" id="callModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="callModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-6">
+                        <form class="needs-validation" novalidate>
+                            <div class="form-row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="validationCustom01">Телефон</label>
+                                    <input type="text" class="form-control" id="caller" value="Mark" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="validationCustom02">ФИО</label>
+                                    <input type="text" class="form-control" id="client_id" value="Otto" required>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-6 ms-auto">
+                            <h1 class="modal-title fs-5">Заказы:</h1>
+                            <table class="table" id="myTable">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">номер заказа</th>
+                                        <th scope="col">статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="table-group-divider" id = "rows">
+                                </tbody>
+                            </table>  
+                    </div>
+                </div>
+            </div>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <button type="button" class="btn btn-primary">Ответить</button>
+                <button type="button" class="btn btn-secondary">Отключить</button>
+            </div>
+
+            <table class="table"> 
+                <thead>
+                    <tr>
+                        <th scope="col">id</th>
+                        <th scope="col">номер звонящего</th>
+                        <th scope="col">номер вызываемого</th>
+                        <th scope="col">клиент</th>
+                        <th scope="col">время звонка</th>
+                        <th scope="col">время конца звонка</th>
+                        <th scope="col">статус звонка</th>
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    {% for row in data %}
+                        <tr>        
+                            <td  scope="row">{{row.id}}</td>
+                            <td>{{row.caller}}</td>
+                            <td>{{row.callee}}</td>
+                            <td>{{row.caller_id}}</td>
+                            <td>{{row.call_start}}</td>
+                            <td>{{row.call_end}}</td>
+                            <td>{{row.call_status}}</td>
+                        </tr>                
+                    {% endfor %}
+                </tbody>
+            </table>   
+        </div>
+      </div>
+    </div>
+  </div>
+  
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='message_listener.js') }}"></script>
+{% endblock %}

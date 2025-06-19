@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Настройки системы{% endblock %}
+
+{% block content %}
+<h1>Настройки системы</h1>
+
+<h2>Модули</h2>
+<div class="mb-3">
+   {% if modules %}
+   <table class="table">
+      <thead>
+         <tr>
+            <th>Модуль</th>
+            <th>Статус</th>
+         </tr>
+      </thead>
+      <tbody>
+         {% for module, enabled in modules.items() %}
+         <tr>
+            <td>{{ module }}</td>
+            <td>
+               <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="mod-{{ module }}" 
+                  {% if enabled %}checked{% endif %}
+               >
+            </td>
+         </tr>
+         {% endfor %}
+      </tbody>
+   </table>
+   {% else %}
+   <p>Нет доступных модулей.</p>
+   {% endif %}
+</div>
+
+<h2>Сервисы</h2>
+<div class="mb-3">
+   {% if services %}
+   <table class="table">
+      <thead>
+         <tr>
+            <th>Сервис</th>
+            <th>Статус</th>
+         </tr>
+      </thead>
+      <tbody>
+         {% for service, status in services.items() %}
+         <tr>
+            <td>{{ service }}</td>
+            <td>
+               <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="service-{{ service }}" 
+                  {% if status.startswith('Up') %}checked{% endif %}
+               >
+               <label class="form-check-label" for="service-{{ service }}">{{ status }}</label>
+            </td>
+         </tr>
+         {% endfor %}
+      </tbody>
+   </table>
+   {% else %}
+   <p>Нет доступных сервисов.</p>
+   {% endif %}
+</div>
+
+{% endblock %}

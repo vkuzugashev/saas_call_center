@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}
+Загрузка списка пользователей (CSV-файл)
+{% endblock %}
+
+{% block content %}
+    <h1 class="display-5 text-center mb-4">Загрузка списка пользователей (CSV-файл)</h1>
+    <form method="POST" action="{{ url_for('users_bp.users_upload_csv') }}" enctype="multipart/form-data">
+        <div class="row gx-3 gy-2 align-items-center">
+            <div class="col-auto">
+                <label for="csvFile" class="visually-hidden">Выберите CSV-файл:</label>
+                <input type="file" class="form-control" id="csvFile" name="file" accept=".csv" required>
+                <small class="form-text text-muted">Поддерживается только формат CSV.</small>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Загрузить</button>
+            </div>
+        </div>
+    </form>
+{% endblock %}
