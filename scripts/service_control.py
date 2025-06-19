@@ -664,7 +664,7 @@ def start(service_name):
       # Задержка 10 сек для того чтобы все запустилось
       time.sleep(10)
 
-   if service_name == 'all' or service_name == 'app_ami':
+   if service_name == 'all' or service_name == 'asterisk' or service_name == 'app_ami':
       start_container('app_ami')
    
    if service_name == 'all' or service_name == 'app_call':
@@ -706,7 +706,7 @@ def stop(service_name):
    if service_name == 'all' or service_name == 'app_call':
       stop_container('app_call')
 
-   if service_name == 'all' or service_name == 'app_ami':
+   if service_name == 'all' or service_name == 'asterisk' or service_name == 'app_ami':
       stop_container('app_ami')
 
    if service_name == 'all' or service_name == 'app_new_call':

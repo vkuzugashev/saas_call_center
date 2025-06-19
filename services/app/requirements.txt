@@ -4,3 +4,6 @@ flask_sqlalchemy
 python-dotenv
 pymysql
 requests
+pandas
+openpyxl
+
