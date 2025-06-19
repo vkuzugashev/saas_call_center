@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, MetaData, Table, String, Integer, Column, 
 
 load_dotenv()
 
-db_user = os.environ.get('DB_USER', 'root')
+db_user = os.environ.get('DB_USERNAME', 'root')
 db_pwd = os.environ.get('DB_PWD', '1234567')
 db_host = os.environ.get('DB_HOST', 'localhost')
 db_port = os.environ.get('DB_PORT', 3306)

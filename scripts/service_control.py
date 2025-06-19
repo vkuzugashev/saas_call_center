@@ -220,7 +220,7 @@ def start_container(container_name, post_command = None):
       if result.returncode != 0:
          raise RuntimeError(f"Ошибка при запуске post command {post_command}: {result.stderr}")
       else:
-         logger.info(f"Команжа {post_command} успешно запущенв.")
+         logger.info(f"Команда {post_command} успешно запущена.")
 
 def stop_container(container_name):
    """
@@ -561,15 +561,22 @@ def build(service_name):
       create_container('app_db', 'app_db', {
          'RABBIT_HOST': local_ip,
          'DB_HOST': local_ip,
+         'DB_USERNAME': db_username,
          'DB_PWD': db_password,
       },{})
    
    if service_name == 'all' or service_name == 'app_new_call':
-      create_container('app_new_call', 'app_new_call', {},{})
+      create_container('app_new_call', 'app_new_call', {
+         'WEBSOCKET_HOST': '0.0.0.0',
+         'CLIENT_INFO_URL': f'http://{local_ip}:8000/clients',
+         'RABBIT_HOST': local_ip,
+      },{'5078':'5078'})
    
    if service_name == 'all' or service_name == 'app_rcv':
       create_container('app_rcv', 'app_rcv', {
          'DB_HOST': local_ip,
+         'DB_NAME': db_name,
+         'DB_USERNAME': db_username,
          'DB_PWD': db_password,
          'API_KEY': API_KEY,
          'API_SECRET_KEY': API_SECRET_KEY
@@ -578,6 +585,8 @@ def build(service_name):
    if service_name == 'all' or service_name == 'app_snd':
       create_container('app_snd', 'app_snd', {
          'DB_HOST': local_ip,
+         'DB_NAME': db_name,
+         'DB_USERNAME': db_username,
          'DB_PWD': db_password,
          'RECORD_URL_PREFIX': f'http://{local_ip}:8088/static/monitor/',
          'YOS_ACCESS_KEY_ID': YOS_ACCESS_KEY_ID,
@@ -591,6 +600,7 @@ def build(service_name):
    if service_name == 'all' or service_name == 'app':
       create_container('app', 'app', {
          'DB_HOST': local_ip,
+         'DB_USERNAME': db_username,
          'DB_PWD': db_password,
          'MANAGER_USER': manager_user,
          'MANAGER_PWD': manager_password,

@@ -1,4 +1,5 @@
 FROM python:3-alpine
+EXPOSE 5078
 WORKDIR /app
 COPY requirements.txt .
 COPY app_new_call.py .
