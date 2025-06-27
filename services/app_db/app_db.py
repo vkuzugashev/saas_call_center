@@ -34,8 +34,6 @@ def store_to_db(body):
         ins = table_calls.insert().values(
             caller = call.get('caller'),
             callee = call.get('callee'),
-            caller_id = call.get('caller_id'),
-            callee_id = call.get('callee_id'),
             call_start = datetime.fromisoformat(call.get('start')),
             call_end = datetime.fromisoformat(call.get('end')) if call.get('end') is not None else None,
             call_status  = call.get('call_status'),

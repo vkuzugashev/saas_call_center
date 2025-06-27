@@ -55,8 +55,8 @@
             <td>{{ call.id }}</td>
             <td>{{ call.call_start }}</td>
             <td>{{ call.call_end }}</td>
-            <td>{{ call.caller }}</td>
-            <td>{{ call.callee }}</td>
+            <td>{{ call.caller }} {{ contacts.get(call.caller, '') }}</td>
+            <td>{{ call.callee }} {{ contacts.get(call.callee, '') }}</td>
             <td>{{ call.call_status }}</td>
             {% if modules['MOD_RECORD'] %}
             <td>

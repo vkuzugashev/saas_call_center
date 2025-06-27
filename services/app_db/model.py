@@ -18,8 +18,6 @@ table_calls = Table('calls', metadata,
     Column('id', Integer, primary_key=True, autoincrement='auto'),
     Column('caller', String(20), nullable=False),
     Column('callee', String(20),  nullable=False),
-    Column('caller_id', String(100), nullable=True),
-    Column('callee_id', String(100), nullable=True),
     Column('call_start', DateTime, nullable=False),
     Column('call_end', DateTime, nullable=True),
     Column('call_status', String(50), nullable=True),
@@ -29,8 +27,3 @@ table_calls = Table('calls', metadata,
     Column('transcription', Text, nullable=True),
     Column('dialog', Text, nullable=True)
 )
-
-if __name__ == '__main__':
-    metadata.drop_all(db)
-    metadata.create_all(db)
-    print('Database schema created.')

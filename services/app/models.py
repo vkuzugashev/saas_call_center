@@ -7,8 +7,9 @@ import hashlib
 db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    department = db.Column(db.String(100))
+    department = db.Column(db.String(100), nullable=False)
     username = db.Column(db.String(50), unique=True, nullable=False)
     fio = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(11), nullable=False)
@@ -28,12 +29,11 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
-class Calls(db.Model):
+class Call(db.Model):
+    __tablename__ = 'calls'
     id = db.Column(db.Integer, primary_key=True)
-    caller = db.Column(db.String(20), nullable=False)
-    callee = db.Column(db.String(20), nullable=False)
-    caller_id = db.Column(db.String(200), nullable=True)
-    callee_id = db.Column(db.String(200), nullable=True)
+    caller = db.Column(db.String(11), nullable=False)
+    callee = db.Column(db.String(11), nullable=False)
     call_start = db.Column(db.DateTime, nullable=False)
     call_end = db.Column(db.DateTime, nullable=True)
     call_status = db.Column(db.String(12), nullable=False)
@@ -47,17 +47,18 @@ class Calls(db.Model):
         return f'<Call {self.caller} -> {self.callee}>'
 
 class Contact(db.Model):
-   id = db.Column(db.Integer, primary_key=True)
-   name = db.Column(db.String(100), nullable=False)
-   phone = db.Column(db.String(11), nullable=False)
-   call_date = db.Column(db.DateTime, nullable=True)
-   is_lead = db.Column(db.Boolean, nullable=False, default=True)
-   note = db.Column(db.Text, nullable=True)
-   orders = db.Column(db.JSON, nullable=True)
-   updated_at = db.Column(db.DateTime, nullable=True)   
+    __tablename__ = 'contacts'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(11), nullable=False)
+    call_date = db.Column(db.DateTime, nullable=True)
+    is_lead = db.Column(db.Boolean, nullable=False, default=True)
+    note = db.Column(db.Text, nullable=True)
+    orders = db.Column(db.JSON, nullable=True)
+    updated_at = db.Column(db.DateTime, nullable=True)   
 
-   def __repr__(self):
-       return f'<Contact {self.name}>'
+    def __repr__(self):
+        return f'<Contact {self.name}>'
 
 
 class CallCategory(db.Model):

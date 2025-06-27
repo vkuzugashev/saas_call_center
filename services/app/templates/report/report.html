@@ -1,27 +1,27 @@
 <!-- templates/report.html -->
 {% extends "base.html" %}
 
-{% block title %}Отчет по звонкам{% endblock %}
+{% block title %}Отчет по принятым звонкам{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <h1>Отчет по звонкам</h1>
+    <h1>Отчет по принятым звонкам</h1>
     
     <table class="table table-striped table-bordered">
         <thead>
             <tr>
-                <th scope="col">Звонящий</th>
+                <th scope="col">Принял</th>
                 <th scope="col">Отдел</th>
-                <th scope="col">Количество звонков</th>
-                <th scope="col">Время разговора</th>
+                <th scope="col">Количество<br/>звонков</th>
+                <th scope="col">Продолжительность<br/>разговора</th>
             </tr>
         </thead>
         <tbody>
             <!-- Данные о звонках -->
-            {% for caller, data in callers.items() %}
+            {% for callee, data in callees.items() %}
             <tr>
-                <td>{{ caller.username }}</td>
-                <td>{{ caller.department }}</td>
+                <td>{{ callee.username }}</td>
+                <td>{{ callee.department }}</td>
                 <td>{{ data['count'] }}</td>
                 <td>{{ data['duration'].seconds // 60 }} мин {{ data['duration'].seconds % 60 }} сек</td>
             </tr>
@@ -35,8 +35,8 @@
         <thead>
             <tr>
                 <th scope="col">Отдел</th>
-                <th scope="col">Количество звонков</th>
-                <th scope="col">Время разговора</th>
+                <th scope="col">Количество<br/>звонков</th>
+                <th scope="col">Продолжительность<br/>разговора</th>
             </tr>
         </thead>
         <tbody>

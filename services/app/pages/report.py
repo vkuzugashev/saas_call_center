@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, render_template, send_file
 from flask_login import login_required
 from datetime import datetime, timedelta
-from models import Calls, User
+from models import Call, User
 import pandas as pd
 from io import BytesIO
 
@@ -18,26 +18,38 @@ def report():
     """
     # Получаем данные за последний месяц
     start_date = datetime.now() - timedelta(days=30)
-    calls = Calls.query.filter(Calls.call_start >= start_date).all()
+    calls = Call.query.filter(Call.call_start >= start_date).all()
 
     # Группируем данные по звонящему и отделу
-    callers = {}
+    callees = {}
     departments = {}
+    unknown_department_name = 'Не определен'
+    
     for call in calls:
-        caller = User.query.filter_by(username=call.caller).first()
-        if caller not in callers:
-            callers[caller] = {'count': 0, 'duration': timedelta()}
-        callers[caller]['count'] += 1
+        callee = User.query.filter_by(username=call.callee).first()
+        if callee is None:
+            continue
+        if callee not in callees:
+            callees[callee] = {'count': 0, 'duration': timedelta()}
+        callees[callee]['count'] += 1
         if call.call_end:
-            callers[caller]['duration'] += call.call_end - call.call_start
+            callees[callee]['duration'] += call.call_end - call.call_start
 
-        if caller.department not in departments:
-            departments[caller.department] = {'count': 0, 'duration': timedelta()}
-        departments[caller.department]['count'] += 1
+
+        if callee.department is None:
+            department_name = unknown_department_name
+        else:
+            department_name = callee.department        
+        
+        if department_name not in departments:
+            departments[department_name] = {'count': 0, 'duration': timedelta()}
+        
+        departments[department_name]['count'] += 1
+
         if call.call_end:
-            departments[caller.department]['duration'] += call.call_end - call.call_start
+            departments[department_name]['duration'] += call.call_end - call.call_start
 
-    return render_template('report.html', callers=callers, departments=departments, modules = current_app.config['modules'])
+    return render_template('report.html', callees=callees, departments=departments, modules = current_app.config['modules'])
 
 @report_bp.route('/report/download', methods=['GET'])
 @login_required
@@ -50,7 +62,7 @@ def download_report():
     """
     # Получаем данные за последний месяц
     start_date = datetime.now() - timedelta(days=30)
-    calls = Calls.query.filter(Calls.call_start >= start_date).all()
+    calls = Call.query.filter(Call.call_start >= start_date).all()
 
     # Группируем данные по звонящему и отделу
     callers = {}
