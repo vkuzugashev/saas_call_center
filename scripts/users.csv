@@ -1,5 +1,4 @@
 ID,Отдел,Имя пользователя,ФИО,Телефон,Очередь,Пароль
 1,admins,admin,администратор,100,,48fa3f4abedfaa10942b2ae96b77961d
-2,операторы,user1,user1,101,operators,8227b673ee5c0f4ae6cb791353936ffc
-3,операторы,user2,user2,102,operators,5d706ae59eb074161bd064a87f140c72
-4,операторы,Forlein,Кузугашев С.В.,707,operators,c65a7472cfd92630b159e077e24a0006
+2,operators,user2,Сидоров И.В.,102,operators,c664a55b5d6ff1268740d85ea8d83aa6
+3,operators,user1,user1,101,operators,aaf4b2aa7dcc971d16c554705cb2881f
