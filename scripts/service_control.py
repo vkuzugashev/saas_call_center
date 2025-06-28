@@ -599,8 +599,11 @@ def build(service_name):
    
    if service_name == 'all' or service_name == 'app_new_call':
       create_container('app_new_call', 'app_new_call', {
+         'DB_HOST': local_ip,
+         'DB_NAME': db_name,
+         'DB_USERNAME': db_username,
+         'DB_PWD': db_password,
          'WEBSOCKET_HOST': '0.0.0.0',
-         'CLIENT_INFO_URL': f'http://{local_ip}:8000/clients',
          'RABBIT_HOST': local_ip,
       },{'5078':'5078'})
    

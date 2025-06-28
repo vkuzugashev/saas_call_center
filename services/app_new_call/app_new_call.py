@@ -1,8 +1,9 @@
 import sys, os, logging, json 
-import asyncio, aiormq, requests
+import asyncio, aiormq
 from websockets import serve
 from dotenv import load_dotenv
 from functools import lru_cache
+from model import db, table_users, table_contacts
 
 load_dotenv()
 
@@ -10,7 +11,6 @@ LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
 RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
 WEBSOCKET_HOST = os.environ.get('WEBSOCKET_HOST', '0.0.0.0')
 WEBSOCKET_PORT = os.environ.get('WEBSOCKET_PORT', 5078)
-CLIENT_INFO_URL = os.environ.get('CLIENT_INFO_URL', 'http://localhost:8000/clients')
 RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE', 'events')
 AMQP_URL = f'amqp://{RABBIT_HOST}/'
 LAST_ACTIVITY_TIMEOUT = 30  # Время неактивности в секундах
@@ -22,20 +22,28 @@ clients = set()
 lock = asyncio.Lock()
 
 @lru_cache(maxsize=None)
-def get_client_info(msisdn):
+def get_contact_info(msisdn):
     """Функция для получения информации о клиенте по MSISDN"""
+    contact = { 'msisdn': msisdn, 'contracts': () }
+
     try:
-        if CLIENT_INFO_URL:
-            response = requests.get(f'{CLIENT_INFO_URL}/{msisdn}')
-            content = response.json()
-            if response.status_code == 200:
-                return content
-            elif response.status_code == 404:
-                return None
-            else:
-                logger.warning(f"Получен неожидаемый статус код: {response.status_code}")
-                return None
-        else:
+        with db.connect() as conn:
+            query = table_users.select(table_users.c.phone == msisdn)
+            result = conn.execute(query)
+            row = result.fetchone()
+            if row:
+                contact['client_id'] = row[table_users.c.fio]
+                return contact
+
+            query = table_contacts.select(table_contacts.c.phone == msisdn)
+            result = conn.execute(query)
+            row = result.fetchone()
+            if row:
+                contact['client_id'] = row[table_contacts.c.name]
+                contact['contracts'] = row[table_contacts.c.orders]
+                return contact
+
+            logger.debug(f"Не найден клиент с номером {msisdn}.")
             return None
     except Exception as e:
         logger.error(f"Ошибка при запросе информации о клиенте: {e}")
@@ -54,7 +62,7 @@ def get_client_info(msisdn):
 #             await asyncio.sleep(LAST_ACTIVITY_TIMEOUT / 2)
 
 def get_default_client_info(msisdn):
-    return {'msisdn': msisdn,'client_id': 'Неизвестный номер', 'contracts': ()}
+    return {'msisdn': msisdn, 'client_id': 'Неизвестный номер', 'contracts': ()}
 
 async def handle_incoming_message(message):    
     """Обработчик входящих сообщений из очереди RabbitMQ"""
@@ -64,7 +72,7 @@ async def handle_incoming_message(message):
         # начало дозвона
         if event['event'] == 'DialBegin':
             caller = event['params']['CallerIDNum']
-            message = get_client_info(caller)
+            message = get_contact_info(caller)
             if message is None:
                 message = get_default_client_info(caller)
                        
