@@ -171,3 +171,5 @@ scripts/users_old.csv
 scripts/users.csv
 scripts/users.csv
 scripts/users.csv
+services/asterisk/conf/users.conf
+services/asterisk/conf/users_extensions.conf
