@@ -466,7 +466,39 @@ def build(service_name):
             raise RuntimeError(f"Ошибка при запуска build_users.py: {result.stderr}")
          else:
             logger.info("Скрипт build_users.py успешно выполнен.")
+
+      # заменим адрес в файле asterisk/conf/pjsip.conf
+      with open(os.path.join(asterisk_path,'conf/pjsip.conf'), 'rt') as f:
+         lines = f.readlines()
       
+      with open(os.path.join(asterisk_path,'conf/pjsip.conf'), 'wt') as f:
+         for line in lines:
+            # Проверяем строку на наличие IP-адреса
+            if '=' in line:
+               # Получаем ключ и значение
+               key, _ = line.strip().split('=', 1)
+               key = key.strip()
+               if key in ['external_media_address','external_signaling_address']:
+                  # Заменяем значение ключа на local_ip
+                  line = f'{key}={local_ip}\n'
+            f.write(line)
+
+      # заменим адрес в файле asterisk/conf/users_template.conf
+      with open(os.path.join(asterisk_path,'conf/users_template.conf'), 'rt') as f:
+         lines = f.readlines()
+      
+      with open(os.path.join(asterisk_path,'conf/users_template.conf'), 'wt') as f:
+         for line in lines:
+            # Проверяем строку на наличие IP-адреса
+            if '=' in line:
+               # Получаем ключ и значение
+               key, _ = line.strip().split('=', 1)
+               key = key.strip()
+               if key in ['media_address']:
+                  # Заменяем значение ключа на local_ip
+                  line = f'{key}={local_ip}\n'
+            f.write(line)
+
       create_image('asterisk', asterisk_path)
    
    if service_name == 'all' or service_name == 'mariadb':
@@ -567,8 +599,11 @@ def build(service_name):
    
    if service_name == 'all' or service_name == 'app_new_call':
       create_container('app_new_call', 'app_new_call', {
+         'DB_HOST': local_ip,
+         'DB_NAME': db_name,
+         'DB_USERNAME': db_username,
+         'DB_PWD': db_password,
          'WEBSOCKET_HOST': '0.0.0.0',
-         'CLIENT_INFO_URL': f'http://{local_ip}:8000/clients',
          'RABBIT_HOST': local_ip,
       },{'5078':'5078'})
    
@@ -632,7 +667,7 @@ def start(service_name):
       # Задержка 10 сек для того чтобы все запустилось
       time.sleep(10)
 
-   if service_name == 'all' or service_name == 'app_ami':
+   if service_name == 'all' or service_name == 'asterisk' or service_name == 'app_ami':
       start_container('app_ami')
    
    if service_name == 'all' or service_name == 'app_call':
@@ -674,7 +709,7 @@ def stop(service_name):
    if service_name == 'all' or service_name == 'app_call':
       stop_container('app_call')
 
-   if service_name == 'all' or service_name == 'app_ami':
+   if service_name == 'all' or service_name == 'asterisk' or service_name == 'app_ami':
       stop_container('app_ami')
 
    if service_name == 'all' or service_name == 'app_new_call':

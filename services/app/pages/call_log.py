@@ -6,7 +6,7 @@ from flask import Blueprint, abort, current_app, flash, redirect, render_templat
 from flask_login import login_required
 import requests
 
-from models import Calls
+from models import Call, Contact, User
 
 call_log_bp = Blueprint('call_log_bp', __name__, template_folder='../templates/call_log')
 
@@ -18,51 +18,66 @@ logger = logging.getLogger("call_log")
 @call_log_bp.route('/calls/log')
 @login_required
 def show_log():
-   """
-   Обработчик для отображения журнала вызовов.
+    """
+    Обработчик для отображения журнала вызовов.
 
-   Returns:
+    Returns:
        Response: Ответ сервера.
-   """
-   # Установка значений by default
-   date_time_format = '%Y-%m-%d'   # формат DD.MM.YY
-   limit = 10
-   today = datetime.now().strftime(date_time_format)  # Текущая дата в формате DD.MM.YYYY
-   page = int(request.args.get('page', 1))
-   fromdt = request.args.get('fromdt', today)
-   todt = request.args.get('todt', today)
+    """
+    # Установка значений by default
+    date_time_format = '%Y-%m-%d'   # формат DD.MM.YY
+    limit = 10
+    today = datetime.now().strftime(date_time_format)  # Текущая дата в формате DD.MM.YYYY
+    page = int(request.args.get('page', 1))
+    fromdt = request.args.get('fromdt', today)
+    todt = request.args.get('todt', today)
 
-   # Преобразование строковых значений в объекты datetime
-   try:
-       from_date = datetime.strptime(fromdt, date_time_format)
-       to_date = datetime.strptime(todt, date_time_format) + timedelta(days=1)
+    # Преобразование строковых значений в объекты datetime
+    try:
+        from_date = datetime.strptime(fromdt, date_time_format)
+        to_date = datetime.strptime(todt, date_time_format) + timedelta(days=1)
        
-   except ValueError:
-       # Если дата некорректна, возвращаем ошибку
-       flash(f'Некорректный формат даты. Должен быть YYYY-MM-DD.')
-       return redirect(url_for('call_log_bp.calls_log'))
+    except ValueError:
+        # Если дата некорректна, возвращаем ошибку
+        flash(f'Некорректный формат даты. Должен быть YYYY-MM-DD.')
+        return redirect(url_for('call_log_bp.calls_log'))
 
-   # Определяем базовый запрос
-   base_query = Calls.query.order_by(Calls.call_start)
+    # Определяем базовый запрос
+    base_query = Call.query.order_by(Call.call_start)
 
-   # Применяем фильтры по дате
-   if from_date:
-       base_query = base_query.filter(Calls.call_start >= from_date)
-   if to_date:
-       base_query = base_query.filter(Calls.call_start <= to_date)
+    # Применяем фильтры по дате
+    if from_date:
+        base_query = base_query.filter(Call.call_start >= from_date)
+    if to_date:
+        base_query = base_query.filter(Call.call_start <= to_date)
  
-   # Извлекаем записи для текущей страницы
-   paginate = base_query.paginate(page=page, per_page=limit, error_out=False)
+    # Извлекаем записи для текущей страницы
+    paginate = base_query.paginate(page=page, per_page=limit, error_out=False)
 
-   # Формируем контекст для рендеринга
-   context = {
+    if paginate.items:
+        phones = [item.caller for item in paginate.items]
+        phones.extend([item.callee for item in paginate.items])
+    else:
+        phones = []
+
+    # Получим список контактов
+    if phones:
+        contacts = { item.phone: item.name for item in Contact.query.filter(Contact.phone.in_(phones)).all()}
+        users = { item.phone: item.fio for item in User.query.filter(User.phone.in_(phones)).all()}
+        contacts = { **contacts, **users }
+    else:
+        contacts = {}
+
+    # Формируем контекст для рендеринга
+    context = {
        'pagination': paginate,
        'fromdt': fromdt,
        'todt': todt,
-       'modules': current_app.config['modules']
-   }
+       'modules': current_app.config['modules'],
+       'contacts': contacts
+    }
 
-   return render_template('calls_log.html', **context)
+    return render_template('calls_log.html', **context)
 
 
 @call_log_bp.route("/record/<int:id>")
@@ -78,7 +93,7 @@ def get_record_file(id):
        Response: Ответ сервера.
    """
    # Получаем звонок
-   call = Calls.query.get_or_404(id)
+   call = Call.query.get_or_404(id)
    
    if call.record_file:
        file_url = RECORD_URL+'/'+call.record_file

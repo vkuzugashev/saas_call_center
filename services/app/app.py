@@ -12,6 +12,7 @@ from pages.call_categories import categories_bp
 from pages.users import users_bp
 from pages.call_log import call_log_bp
 from pages.contacts import contacts_bp
+from pages.report import report_bp
 
 # Импортируем модели из models.py
 from models import db, User
@@ -149,13 +150,13 @@ def register():
 
    return render_template('register.html')
 
-
 # Регистрируем маршруты из других модулей
 app.register_blueprint(settings_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(categories_bp)
 app.register_blueprint(call_log_bp)
 app.register_blueprint(contacts_bp)
+app.register_blueprint(report_bp)
 
 if __name__ == '__main__':
     app.config['modules'] = get_modules_settings()
