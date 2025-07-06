@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, MetaData, Table, String, Integer, Column, DateTime, Text
+from sqlalchemy import create_engine, MetaData, Table, Boolean, String, Integer, Column, DateTime, Text, JSON
 
 load_dotenv()
 
@@ -18,8 +18,6 @@ table_calls = Table('calls', metadata,
     Column('id', Integer, primary_key=True, autoincrement='auto'),
     Column('caller', String(20), nullable=False),
     Column('callee', String(20),  nullable=False),
-    Column('caller_id', String(100), nullable=True),
-    Column('callee_id', String(100), nullable=True),
     Column('call_start', DateTime, nullable=False),
     Column('call_end', DateTime, nullable=True),
     Column('call_status', String(50), nullable=True),
@@ -30,7 +28,20 @@ table_calls = Table('calls', metadata,
     Column('dialog', Text, nullable=True)
 )
 
-if __name__ == '__main__':
-    metadata.drop_all(db)
-    metadata.create_all(db)
-    print('Database schema created.')
+table_users = Table('users', metadata, 
+    Column('id', Integer, primary_key=True),
+    Column('username', String(50), unique=True, nullable=False),
+    Column('fio', String(200), nullable=False),
+    Column('phone', String(11), nullable=False))
+
+table_contacts = Table('contacts', metadata,
+    Column('id', Integer, primary_key=True, autoincrement='auto'),
+    Column('name', String(100), nullable=False),
+    Column('phone', String(11), nullable=False),
+    Column('orders', JSON, nullable=True),
+    Column('call_date', DateTime, nullable=True),
+    Column('is_lead', Boolean, nullable=False, default=True),
+    Column('note',  Text, nullable=True),
+    Column('updated_at', DateTime, nullable=True)   
+)
+

@@ -48,27 +48,27 @@ def generate_configuration(csv_filename):
                 config = f"""
 ; Пользователь: {full_name}, Отдел: {department}, Телефон: {phone_number}
 
-[{username}](internal-endpoint)
-auth={username}
-aors={username}
+[{phone_number}](internal-endpoint)
+auth={phone_number}
+aors={phone_number}
 
-[{username}](internal-auth)
+[{phone_number}](internal-auth)
 username={username}
 md5_cred={password}
 
-[{username}](internal-aor)
+[{phone_number}](internal-aor)
 """
 
                 users_configs.append(config)
 
                 if queue == 'operators':
-                    operator_members.append(f"member => PJSIP/{username}\n")
+                    operator_members.append(f"member => PJSIP/{phone_number}\n")
 
                 # Генерируем конфигурацию для extensions.conf
                 # Добавление комментария перед строками конфигурации
                 extension_config = f"""
 ; Пользователь: {full_name}, Отдел: {department}, Телефон: {phone_number}
-exten => {phone_number},1,Dial(PJSIP/{username})
+exten => {phone_number},1,Dial(PJSIP/{phone_number})
 same => n,Hangup()
 """
                 extension_configs.append(extension_config)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     # проводим вход в систему
     session = requests.Session()
-    data = data={'username': MANAGER_USER, 'password': MANAGER_PWD}
+    data = {'username': MANAGER_USER, 'password': MANAGER_PWD}
     response = session.post(f"{APP_URL}/login", data=data)
     if response.status_code != 200:
         print("Ошибка при входе в систему.", response.status_code)
