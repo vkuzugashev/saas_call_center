@@ -553,9 +553,11 @@ def build(service_name):
          'MOD_RECORD': modules['MOD_RECORD'],
       }, {  
          '5060':'5060/udp',
+         '5061':'5061/udp',
          '5038':'5038',
          '10000-10100':'10000-10100/udp',
-         '8088':'8088'
+         '8088':'8088',
+         '8089':'8089'
       },{
          os.path.join(asterisk_path,'sounds'): '/var/lib/asterisk/sounds',
          '../var/asterisk/monitor':'/var/spool/asterisk/monitor',
