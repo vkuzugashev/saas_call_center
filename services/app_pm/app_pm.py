@@ -22,7 +22,7 @@ logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
 monitoring_canceled = False
-monitorint_thread = None
+monitoring_thread = None
 
 def get_python_cmd():
    """
@@ -174,17 +174,17 @@ def run_check_services():
 def signal_handler(sig, frame):
    logger.info(f'Caught signal {sig}')
    # завершить потоки и завершить программу
-   global monitoring_canceled, monitorint_thread
+   global monitoring_canceled, monitoring_thread
    monitoring_canceled = True
-   monitorint_thread.join()
+   monitoring_thread.join()
    sys.exit(0)
 
 def monitoring_init():
    signal.signal(signal.SIGINT, signal_handler)
    signal.signal(signal.SIGTERM, signal_handler)
-   global monitorint_thread
-   monitorint_thread = threading.Thread(target=run_check_services)
-   monitorint_thread.start()
+   global monitoring_thread
+   monitoring_thread = threading.Thread(target=run_check_services)
+   monitoring_thread.start()
 
 if __name__ == '__main__':   
    monitoring_init()
