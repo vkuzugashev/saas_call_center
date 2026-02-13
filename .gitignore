@@ -169,7 +169,10 @@ beta_test/
 tree.txt
 scripts/users_old.csv
 scripts/users.csv
-scripts/users.csv
-scripts/users.csv
 services/asterisk/conf/users.conf
 services/asterisk/conf/users_extensions.conf
+services/asterisk/certs/ca.crt
+services/asterisk/certs/ca.key
+services/asterisk/certs/server.crt
+services/asterisk/certs/server.csr
+services/asterisk/certs/server.key

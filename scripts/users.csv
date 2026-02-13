@@ -1,4 +1,7 @@
 ID,Отдел,Имя пользователя,ФИО,Телефон,Очередь,Пароль
 1,admins,admin,администратор,100,,48fa3f4abedfaa10942b2ae96b77961d
-2,operators,user2,Сидоров И.В.,102,operators,c664a55b5d6ff1268740d85ea8d83aa6
-3,operators,user1,user1,101,operators,aaf4b2aa7dcc971d16c554705cb2881f
+4,operators,vladimir,Кузугашев В.И.,89043744685,operators,20a9f78dd930bb43b9ea4cbff9d4f394
+5,operators,nataly,Кузугашева Н.Ю.,89045722006,operators,52f8652cde6a800162b5e0f839ff10d9
+6,operators,vera,Мазурина В.,89049698507,operators,11d0d843d8988181222ee0faea3cb987
+7,operators,yura,Мазурин Ю.,89515779750,operators,7ae27d240bdb0f7b2f8e0a39d8103642
+8,operators,ivan,Кузугашев И.В.,89515746175,operators,5a05372895c6dd0cc1738389b2ac5f8f

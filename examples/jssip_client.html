@@ -1,0 +1,96 @@
+<html>
+
+<script src="https://jssip.net/download/releases/jssip-3.10.0.min.js"></script>
+<script>
+ // Create our JsSIP instance and run it:
+
+var socket = new JsSIP.WebSocketInterface('wss://90.156.206.67:8089/ws');
+var configuration = {
+  sockets  : [ socket ],
+  uri      : 'sip:200@90.156.206.67',
+  authorization_user : 'penart',
+  password : 'panama'
+};
+
+var ua = new JsSIP.UA(configuration);
+
+ua.start();
+
+// Register callbacks to desired call events
+var eventHandlers = {
+  'progress': function(e) {
+    console.log('call is in progress', e);
+  },
+  'failed': function(e) {
+    console.log('call failed with cause: ', e);
+  },
+  'ended': function(e) {
+    console.log('call ended with cause: ', e);
+  },
+  'confirmed': function(e) {
+    console.log('call confirmed', e);
+  },
+  'connecting': function(e) {
+	        console.log("UA session connecting");
+
+        	// Тут мы подключаемся к микрофону и цепляем к нему поток, который пойдёт в астер
+	        let peerconnection = session.connection;
+//	        let localStream = peerconnection.getLocalStreams()[0];
+
+//	        // Handle local stream
+//	        if (localStream) {
+//	            // Clone local stream
+//	            let localClonedStream = localStream.clone();
+//	
+//        	    console.log('UA set local stream');
+//
+//	            let localAudioControl = document.getElementById("localAudio");
+//	            localAudioControl.srcObject = localClonedStream;
+//        	}
+
+	        // Как только астер отдаст нам поток абонента, мы его засунем к себе в наушники
+	        peerconnection.addEventListener('addstream', (event) => {
+	            console.log("UA session addstream");
+	            let remoteAudioControl = document.getElementById("remoteAudio");
+	            remoteAudioControl.srcObject = event.stream;
+	        });
+  }
+
+};
+
+var session;
+
+var options = {
+  eventHandlers    : eventHandlers,
+  mediaConstraints : { 'audio': true, 'video': false },
+  rtcOfferConstraints: {
+     offerToReceiveAudio: 1, // Принимаем только аудио
+     offerToReceiveVideo: 0
+  },
+  pcConfig	   : {
+      iceServers : [{'urls': 'stun:stun.l.google.com:19302'}],
+      hackStripTcp: true, // Важно для хрома, чтоб он не тупил при звонке
+      rtcpMuxPolicy: 'negotiate', // Важно для хрома, чтоб работал multiplexing. Эту штуку обязательно нужно включить на астере.
+  }
+};
+
+
+function call(){
+	const input = document.getElementById('phone');  // Извлекаем элемент input
+	const phone = input.value;
+	const sip = `sip:${phone}@90.156.206.67`;
+	session = ua.call(sip, options);	
+}
+
+function end(){
+	console.log('Start end ...')
+	session.terminate();
+}
+
+</script>
+<input type='text' id='phone' value=''>
+<input type='button' onClick='call()' value='Call'>
+<input type='button' onClick='end()' value='End'>
+<!--audio id="localAudio" autoPlay muted></audio-->
+<audio id="remoteAudio" autoPlay></audio>
+</html>
