@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
     # 🔍 Healthcheck: проверка доступности MariaDB
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-ppanama"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p$$MARIADB_ROOT_PASSWORD$"]
       interval: 10s
       timeout: 10s
       retries: 10
