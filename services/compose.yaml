@@ -11,13 +11,12 @@ services:
       - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql                      # постоянное хранилище БД
-      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # опционально: скрипт инициализации      
     restart: unless-stopped
     # 🔍 Healthcheck: проверка доступности MariaDB
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-ppanama"]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 30s
 
@@ -80,6 +79,7 @@ services:
     build: 
       context: ./app
       dockerfile: Dockerfile
+    container_name: scc-app
     env_file:
       - ./app/.env
     depends_on:
