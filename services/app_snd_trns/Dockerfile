@@ -1,7 +1,10 @@
 FROM python:3-alpine
+
 WORKDIR /app
+
 COPY requirements.txt .
-COPY app_snd_trns.py .
-COPY .env.example .env
+COPY app.py .
+
 RUN python -m pip install --no-cache-dir -r requirements.txt
-CMD [ "python", "-u", "./app_snd_trns.py"]
+
+CMD [ "python", "-u", "./app.py"]

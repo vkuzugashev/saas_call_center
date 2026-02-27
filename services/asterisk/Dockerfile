@@ -23,10 +23,12 @@ ADD conf/queues.conf etc/asterisk/queues.conf
 ADD conf/queue_operators.conf etc/asterisk/queue_operators.conf
 ADD conf/members_operators.conf etc/asterisk/members_operators.conf
 ADD conf/http.conf /etc/asterisk/http.conf
-ADD certs/server.crt /etc/asterisk/keys/server.crt
-ADD certs/server.key /etc/asterisk/keys/server.key
 
-RUN chmod 755 -R /etc/asterisk/keys
+# Для WebRTC
+# ADD certs/server.crt /etc/asterisk/keys/server.crt
+# ADD certs/server.key /etc/asterisk/keys/server.key
+# RUN chmod 755 -R /etc/asterisk/keys
+
 RUN apk add --update asterisk-srtp asterisk-opus &&  rm -rf /var/cache/apk/*
 RUN apk add sox
 RUN apk add --update tcpdump && rm -rf /var/cache/apk/*

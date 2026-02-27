@@ -1,121 +1,176 @@
 services:
-  # === PostgreSQL Database ===
-  postgres:
-    image: timescale/timescaledb:latest-pg18
-    container_name: kmes-postgres
-    environment:
-      POSTGRES_DB: historydb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1
+  # === MySQL Database ===
+  mariadb:
+    build:
+      context: ./mariadb
+      dockerfile: Dockerfile
+    container_name: scc-mariadb
+    env_file:
+      - ./mariadb/.env
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./historian/store/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mariadb_data:/var/lib/mysql                      # постоянное хранилище БД
+      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # опционально: скрипт инициализации      
+    restart: unless-stopped
+    # 🔍 Healthcheck: проверка доступности MariaDB
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
-  kafka:
-    image: apache/kafka:latest
-    container_name: kafka
+  rabbitmq:
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile
+    container_name: scc-rabbitmq
     ports:
-      - "9092:9092"
-    environment:
-      KAFKA_NODE_ID: 1                     # ID узла
-      KAFKA_PROCESS_ROLES: controller,broker  # Роли узла: контроллер и брокер
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'  # Адрес контроллера
-      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093  # Типы протокола и порты
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT  # Внутренний протокол для коммуникаций между брокерами
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER          # Должен присутствовать хотя бы один listener из KAFKA_LISTENERS
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1  # Коэффициент репликации offset-темы
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0  # Задержка начальной балансировки групп потреблени
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
-    volumes:
-      - kafka_data:/kafka
+      - "5672:5672"
     restart: unless-stopped
+    # 🔍 Healthcheck: проверка работоспособности RabbitMQ
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping", "--quiet"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
-  # === Historian Service ===
-  historian:
+  redis:
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
+    container_name: scc-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  asterisk:
+    build:
+      context: ./asterisk
+      dockerfile: Dockerfile
+    container_name: scc-asterisk
+    ports:
+      - "5060:5060/udp" 
+      - "5038:5038"
+      - "10000-10100:10000-10100/udp"
+      - "8088:8088"
+      - "8089:8089"
+    volumes:
+      - asterisk_sounds:/var/lib/asterisk/sounds
+      - asterisk_log:/var/log/asterisk
+      - asterisk_monitor:/var/spool/asterisk/monitor
+    restart: unless-stopped
+    # 🔍 Healthcheck: проверка готовности Asterisk
+    healthcheck:
+      test: ["CMD", "asterisk", "-rx", "core show version"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  app:
     build: 
-      context: ./historian
+      context: ./app
       dockerfile: Dockerfile
     env_file:
-      - ./historian/.env
+      - ./app/.env
     depends_on:
-      postgres:
+      asterisk:
         condition: service_healthy
-      kafka:
-        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
-  # === Emulator ===
-  emulator:
-    build:
-      context: ./emulators/modbus
+  app_ami:
+    build: 
+      context: ./app_ami
       dockerfile: Dockerfile
-    container_name: modbus-emulator
-    ports:
-      - "5502:5502"
-    restart: unless-stopped
-
-  # === RTDS (Real-Time Data Service) ===
-  rtds:
-    build:
-      context: ./rtds
-      dockerfile: Dockerfile
-    container_name: kmes-rtds
+    container_name: scc-app_ami
     env_file:
-      - ./rtds/.env
-    ports:
-      - "4000:4000"
-      - "5002:5002"
-    volumes:
-      - rtds_data:/app/data
+      - ./app_ami/.env
     depends_on:
-      - kafka
-      - emulator
+      asterisk:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
-  # === Prometheus ===
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: kmes-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/consoles'
-      - '--web.console.templates=/etc/prometheus/consoles'
+  app_call:
+    build: 
+      context: ./app_call
+      dockerfile: Dockerfile
+    container_name: scc-app_call
+    env_file:
+      - ./app_call/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
-  # === Grafana (опционально) ===
-  grafana:
-    image: grafana/grafana:latest
-    container_name: kmes-grafana
-    ports:
-      - "3000:3000"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_USERS_ALLOW_SIGN_UP: false
-    volumes:
-      - grafana_storage:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
+  app_db:
+    build: 
+      context: ./app_db
+      dockerfile: Dockerfile
+    container_name: scc-app_db
+    env_file:
+      - ./app_db/.env
     depends_on:
-      - prometheus
+      rabbitmq:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  app_new_call:
+    build: 
+      context: ./app_new_call
+      dockerfile: Dockerfile
+    container_name: scc-app_new_call
+    env_file:
+      - ./app_new_call/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  app_rcv_trns:
+    build: 
+      context: ./app_rcv_trns
+      dockerfile: Dockerfile
+    container_name: scc-app_rcv_trns
+    env_file:
+      - ./app_rcv_trns/.env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  app_snd_trns:
+    build: 
+      context: ./app_snd_trns
+      dockerfile: Dockerfile
+    container_name: scc-app_snd_trns
+    env_file:
+      - ./app_snd_trns/.env
+    depends_on:
+      mariadb:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  rtds_data:
-  postgres_data:
-  prometheus_data:
-  grafana_storage:
-  zookeeper_data:
-  kafka_data:
+  mariadb_data:
+  asterisk_sounds:
+  asterisk_log:
+  asterisk_monitor:
