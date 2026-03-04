@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import os
 from typing import Optional
 from flask_login import UserMixin
-from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, create_engine, select
+from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, String, Text, create_engine, func, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 import hashlib
@@ -28,19 +28,20 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 class Base(DeclarativeBase):
     __abstract__ = True
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc)
+        DateTime,        
+        default=func.now(),         # Устанавливаем текущее время по умолчанию        
+        onupdate=func.now()         # Обновляем время при каждом обновлении записи        
     )
 
 class User(Base, UserMixin):
     __tablename__ = 'users'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
     department: Mapped[str] = mapped_column(String(100))
     username: Mapped[str] = mapped_column(String(50), unique=True)
     fio: Mapped[str] = mapped_column(String(200))
     phone: Mapped[str] = mapped_column(String(11))
-    queue: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    queue: Mapped[Optional[str]] = mapped_column(String(100))
     # Хранится хеш пароля   
     password_hash: Mapped[str] = mapped_column(String(256), use_existing_column=True)  # Хранится хеш пароля    
     asterisk_hash: Mapped[str] = mapped_column(String(256), use_existing_column=True)  # Хранится хеш пароля для asterisk
@@ -58,42 +59,105 @@ class User(Base, UserMixin):
 
 class Call(Base):
     __tablename__ = 'calls'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
     caller: Mapped[str] = mapped_column(String(11))
     callee: Mapped[str] = mapped_column(String(11))
-    call_start: Mapped[datetime] = mapped_column(DateTime)
-    call_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    call_start: Mapped[datetime]
+    call_end: Mapped[Optional[datetime]]
     call_status: Mapped[str] = mapped_column(String(12))
-    record_file: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    transcription_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    transcription_status: Mapped[int] = mapped_column(Integer, default=0)
-    transcription: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    dialog: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    record_file: Mapped[Optional[str]] = mapped_column(String(255))
+    transcription_id: Mapped[Optional[str]] = mapped_column(String(255))
+    transcription_status: Mapped[int] = mapped_column(default=0)
+    transcription: Mapped[Optional[str]] = mapped_column(Text)
+    dialog: Mapped[Optional[str]] = mapped_column(Text)
     
     def __repr__(self):
         return f'<Call {self.caller} -> {self.callee}>'
 
+
 class Contact(Base):
     __tablename__ = 'contacts'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
     phone: Mapped[str] = mapped_column(String(11))
-    call_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    is_lead: Mapped[bool] = mapped_column(Boolean, default=True)
-    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    orders: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)   
+    call_date: Mapped[Optional[datetime]]
+    is_lead: Mapped[bool] = mapped_column(default=True)
+    note: Mapped[Optional[str]] = mapped_column(Text)
+    orders: Mapped[Optional[dict]] = mapped_column(JSON)
 
     def __repr__(self):
         return f'<Contact {self.name}>'
 
+
 class CallCategory(Base):
     __tablename__ = 'call_categories'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
 
     def __repr__(self):
         return f'<CallCategory {self.name}>'
+
+
+class PJSIPEndpoint(Base):
+    __tablename__ = "pjsip_endpoints"
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    transport: Mapped[str] = mapped_column(String(80))
+    aors: Mapped[str] = mapped_column(String(80))
+    auth: Mapped[str] = mapped_column(String(80))
+    callerid: Mapped[str] = mapped_column(String(80))
+    direct_media: Mapped[bool] = mapped_column(default=True)
+    dtmf_mode: Mapped[str] = mapped_column(String(80), default="rfc4733") # ENUM('rfc4733', 'inband', 'info')
+    disallow: Mapped[str] = mapped_column(String(80))
+    allow: Mapped[str] = mapped_column(String(80))
+    force_rport: Mapped[bool] = mapped_column(default=False)
+    rewrite_contact: Mapped[bool] = mapped_column(default=True)
+
+    def __repr__(self):
+        return f'<PJSIPEndpoint {self.transport}>' ,
+
+# Таблица pjsip_aors
+class PJSIPEndpointAOR(Base):
+    __tablename__ = 'pjsip_aors'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    contact: Mapped[str] = mapped_column(String(255))
+    max_contacts: Mapped[int] = mapped_column(default=1)
+    remove_existing: Mapped[bool] = mapped_column(default=True)
+
+
+# Таблица pjsip_authentications
+class PJSIPAuthentication(Base):
+    __tablename__ = 'pjsip_authentications'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(80))
+    password: Mapped[str] = mapped_column(String(80))
+    realm: Mapped[str] = mapped_column(String(80))
+
+
+# Таблица pjsip_transports
+class PJSIPTransport(Base):
+    __tablename__ = 'pjsip_transports'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    protocol: Mapped[str] = mapped_column(String(10))   #Enum('tcp', 'udp', 'tls'))
+    bind_addr: Mapped[str] = mapped_column(String(80))
+    port: Mapped[int]
+    certfile: Mapped[str] = mapped_column(String(255))
+    privkeyfile: Mapped[str] = mapped_column(String(255))
+
+
+# Таблица pjsip_global_settings
+class PJSIPGlobalSetting(Base):
+    __tablename__ = 'pjsip_global_settings'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    option_key: Mapped[str] = mapped_column(String(80))
+    value: Mapped[str] = mapped_column(String(255))
 
 
 def init_db():

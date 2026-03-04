@@ -121,7 +121,7 @@ def edit_user(id):
             user.phone = request.form['phone']
             user.queue = request.form['queue']
             password = request.form['password'].strip()
-            user.updated_at = datetime.now()
+            # user.updated_at = datetime.now()
 
             # Проверяем, если пароль введен и не пустая строка
             if password:
