@@ -11,7 +11,7 @@ load_dotenv()
 
 # Переменные окружения
 # Настройки БД
-DB_USER = os.getenv("DB_USERNAME")
+DB_USER = os.getenv("DB_USER")
 DB_PWD = os.getenv("DB_PWD")
 DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DB_NAME")
@@ -23,7 +23,7 @@ DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PWD}@{DB_HOST}/{DB_NAME}"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 # SPEECH
-API_KEY = os.getenv("API_SECRET_KEY")  # Обратите внимание на переименование переменной
+SPEECH_API_SECRET_KEY = os.getenv("SPEECH_API_SECRET_KEY")  # Обратите внимание на переименование переменной
 SPEECH_API_ENDPOINT = "https://operation.api.cloud.yandex.net//operations"
 
 # Интервал опроса базы данных (в секундах)
@@ -84,7 +84,7 @@ def process_dialogue(dialogue_data):
 def check_transcription_status(transcription_id):
     url = f'{SPEECH_API_ENDPOINT}/{transcription_id}'
     headers = {
-        'Authorization': f'Api-Key {API_KEY}',  # Убедитесь, что здесь используется правильный ключ
+        'Authorization': f'Api-Key {SPEECH_API_SECRET_KEY}',  # Убедитесь, что здесь используется правильный ключ
     }
     try:
         response = requests.get(url, headers=headers)

@@ -4,14 +4,13 @@ EXPOSE 5000
 
 WORKDIR /app
 
-COPY requirements.txt .
 COPY app.py .
-COPY create_db.py .
-COPY models.py .
+COPY models/ models/
 COPY pages/ pages/
 COPY static/ static/
 COPY templates/ templates/
+COPY requirements.txt .
 
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --user --no-cache-dir -r requirements.txt
 
 CMD [ "python", "-u", "./app.py"]

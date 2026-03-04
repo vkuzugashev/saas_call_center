@@ -4,11 +4,11 @@ from sqlalchemy import create_engine, MetaData, Table, Boolean, String, Integer,
 
 load_dotenv()
 
-db_user = os.environ.get('DB_USERNAME', 'root')
-db_pwd = os.environ.get('DB_PWD', '1234567')
-db_host = os.environ.get('DB_HOST', 'localhost')
-db_port = os.environ.get('DB_PORT', 3306)
-db_name = os.environ.get('DB_NAME', 'call_center')
+db_user = os.environ.get('DB_USER')
+db_pwd = os.environ.get('DB_PWD')
+db_host = os.environ.get('DB_HOST')
+db_port = os.environ.get('DB_PORT')
+db_name = os.environ.get('DB_NAME')
 db_url = f'mysql+pymysql://{db_user}:{db_pwd}@{db_host}/{db_name}'
 db = create_engine(db_url, echo=True)
 

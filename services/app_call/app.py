@@ -11,9 +11,9 @@ RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
 REDIS_KEY_EXPIRE = int(os.environ.get('REDIS_KEY_EXPIRE', '3600'))
-CLIENT_URL = os.environ.get('CLIENT_URL', "")
+CLIENT_INFO_URL = os.environ.get('CLIENT_INFO_URL', "")
 RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE', 'events')
-RABBIT_EVENTS_QUEUE = os.environ.get('RABBIT_EVENTS_QUEUE', 'events')
+RABBIT_APP_CALL_EVENTS_QUEUE = os.environ.get('RABBIT_APP_CALL_EVENTS_QUEUE', 'events')
 
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger(__name__)
@@ -42,8 +42,8 @@ def redis_set(key, value):
     logger.debug(f'Stored in redis: {key} -> {str_call}')
     
 def get_client_id(msisdn):
-    if CLIENT_URL != "":
-        response = requests.get(f'{CLIENT_URL}/{msisdn}')
+    if CLIENT_INFO_URL != "":
+        response = requests.get(f'{CLIENT_INFO_URL}/{msisdn}')
         content = response.content
         if response.status_code == 200:
             data = json.loads(content)
@@ -154,7 +154,7 @@ def run():
     with pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST)) as connection:
         channel = connection.channel()
         channel.exchange_declare(exchange=RABBIT_EVENTS_EXCHANGE, exchange_type='fanout')
-        result = channel.queue_declare(queue=RABBIT_EVENTS_QUEUE, exclusive=True)
+        result = channel.queue_declare(queue=RABBIT_APP_CALL_EVENTS_QUEUE, exclusive=True)
         queue_name = result.method.queue
         channel.queue_bind(exchange=RABBIT_EVENTS_EXCHANGE, queue=queue_name)
         channel.basic_consume(queue=queue_name, auto_ack=True, on_message_callback=callback)

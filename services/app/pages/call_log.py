@@ -1,19 +1,22 @@
-from datetime import datetime, timedelta
 import logging
 import os
-
+from datetime import datetime, timedelta
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, send_file, url_for
 from flask_login import login_required
 import requests
-
-from models import Call, Contact, User
+from sqlalchemy import and_, func
+from models.model import get_db, User, Call, Contact
+from .paginate import Pagination
 
 call_log_bp = Blueprint('call_log_bp', __name__, template_folder='../templates/call_log')
 
-# Url для загрузки файла записи
-RECORD_URL = os.getenv('RECORD_URL')
-
 logger = logging.getLogger("call_log")
+
+# Url для загрузки файла записи
+RECORD_URL = os.getenv('ASTERISK_RECORD_URL')
+
+def get_session():
+    return next(get_db())
 
 @call_log_bp.route('/calls/log')
 @login_required
@@ -42,73 +45,77 @@ def show_log():
         flash(f'Некорректный формат даты. Должен быть YYYY-MM-DD.')
         return redirect(url_for('call_log_bp.calls_log'))
 
-    # Определяем базовый запрос
-    base_query = Call.query.order_by(Call.call_start)
+    with get_session() as session:
+        # Определяем базовый запрос
+        stmt = session.query(Call).order_by(Call.call_start)
+        
+        # Применяем фильтры по дате
+        stmt = stmt.filter(and_(Call.call_start >= from_date, Call.call_start < to_date))
+    
+        # Подсчёт общего количества записей
+        total_stmt = session.query(func.count('*')).select_from(Call).filter(*stmt.whereclause)
+        total = session.execute(total_stmt).scalar()
 
-    # Применяем фильтры по дате
-    if from_date:
-        base_query = base_query.filter(Call.call_start >= from_date)
-    if to_date:
-        base_query = base_query.filter(Call.call_start <= to_date)
- 
-    # Извлекаем записи для текущей страницы
-    paginate = base_query.paginate(page=page, per_page=limit, error_out=False)
+        # Выборка данных для страницы
+        items = stmt.offset((page - 1) * limit).limit(limit).all()
 
-    if paginate.items:
-        phones = [item.caller for item in paginate.items]
-        phones.extend([item.callee for item in paginate.items])
-    else:
-        phones = []
+        paginate = Pagination(items, page, limit, total)
 
-    # Получим список контактов
-    if phones:
-        contacts = { item.phone: item.name for item in Contact.query.filter(Contact.phone.in_(phones)).all()}
-        users = { item.phone: item.fio for item in User.query.filter(User.phone.in_(phones)).all()}
-        contacts = { **contacts, **users }
-    else:
-        contacts = {}
+        if paginate.items:
+            phones = [item.caller for item in paginate.items]
+            phones.extend([item.callee for item in paginate.items])
+        else:
+            phones = []
 
-    # Формируем контекст для рендеринга
-    context = {
-       'pagination': paginate,
-       'fromdt': fromdt,
-       'todt': todt,
-       'modules': current_app.config['modules'],
-       'contacts': contacts
-    }
+        # Получим список контактов
+        if phones:
+            contacts = { item.phone: item.name for item in session.query(Contact).filter(Contact.phone.in_(phones)).all()}
+            users = { item.phone: item.fio for item in session.query(User).filter(User.phone.in_(phones)).all()}
+            contacts = { **contacts, **users }
+        else:
+            contacts = {}
 
-    return render_template('calls_log.html', **context)
+        # Формируем контекст для рендеринга
+        context = {
+        'pagination': paginate,
+        'fromdt': fromdt,
+        'todt': todt,
+        'modules': current_app.config['modules'],
+        'contacts': contacts
+        }
+
+        return render_template('calls_log.html', **context)
 
 
 @call_log_bp.route("/record/<int:id>")
 @login_required
 def get_record_file(id):
-   """
-   Обработчик для загрузки файла записи звонка.
+    """
+    Обработчик для загрузки файла записи звонка.
 
-   Args:
+    Args:
        id (int): Идентификатор звонка.
 
-   Returns:
+    Returns:
        Response: Ответ сервера.
-   """
-   # Получаем звонок
-   call = Call.query.get_or_404(id)
-   
-   if call.record_file:
-       file_url = RECORD_URL+'/'+call.record_file
-       logger.debug(f'Начало загрузки файла: {file_url}')
-       # Загрузка файла по ссылке
-       response = requests.get(file_url, stream=True)
-   
-       # Проверяем успешность загрузки
-       if response.status_code == 200:
-           # Передача файла клиенту
-           filename = os.path.basename(file_url)
-           logger.debug(f'Загружен файл: {filename}')
-           return send_file(response.raw, download_name=filename, as_attachment=True)
-       else:
-           return f"Не удалось загрузить файл. Код статуса: {response.status_code}", 500
-   else:
-       abort(404)
+    """
+    with get_session() as session:
+        # Получаем звонок
+        call = session.get(Call, id)
+        if call and call.record_file:
+            file_url = RECORD_URL+'/'+call.record_file
+            logger.debug(f'Начало загрузки файла: {file_url}')
+            # Загрузка файла по ссылке
+            response = requests.get(file_url, stream=True)
+        
+            # Проверяем успешность загрузки
+            if response.status_code == 200:
+                # Передача файла клиенту
+                filename = os.path.basename(file_url)
+                logger.debug(f'Загружен файл: {filename}')
+                return send_file(response.raw, download_name=filename, as_attachment=True)
+            else:
+                return f"Не удалось загрузить файл. Код статуса: {response.status_code}", 500
+        else:
+            abort(404)
 

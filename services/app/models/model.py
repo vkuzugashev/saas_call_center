@@ -1,0 +1,130 @@
+from datetime import datetime, timezone
+import os
+from typing import Optional
+from flask_login import UserMixin
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, create_engine, select
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, sessionmaker
+from werkzeug.security import generate_password_hash, check_password_hash
+import hashlib
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DB_DRIVER = os.getenv('DB_DRIVER')
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = int(os.getenv('DB_PORT', 3306))
+DB_USER = os.getenv('DB_USER')
+DB_PWD = os.getenv('DB_PWD')
+DB_NAME = os.getenv('DB_NAME')
+MANAGER_USER = os.getenv('APP_MANAGER_USER')
+MANAGER_PWD = os.getenv('APP_MANAGER_PWD')
+
+# Формируем строку подключения к базе данных
+DATABASE_URI = f'{DB_DRIVER}+pymysql://{DB_USER}:{DB_PWD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4'
+
+engine = create_engine(DATABASE_URI)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+class Base(DeclarativeBase):
+    __abstract__ = True
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.now(timezone.utc), 
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+class User(Base, UserMixin):
+    __tablename__ = 'users'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    department: Mapped[str] = mapped_column(String(100))
+    username: Mapped[str] = mapped_column(String(50), unique=True)
+    fio: Mapped[str] = mapped_column(String(200))
+    phone: Mapped[str] = mapped_column(String(11))
+    queue: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    # Хранится хеш пароля   
+    password_hash: Mapped[str] = mapped_column(String(256), use_existing_column=True)  # Хранится хеш пароля    
+    asterisk_hash: Mapped[str] = mapped_column(String(256), use_existing_column=True)  # Хранится хеш пароля для asterisk
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+        # создать md5 пароль для asterisk
+        self.asterisk_hash = hashlib.md5(f'{self.username}:asterisk:{password}'.encode()).hexdigest()
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
+
+class Call(Base):
+    __tablename__ = 'calls'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    caller: Mapped[str] = mapped_column(String(11))
+    callee: Mapped[str] = mapped_column(String(11))
+    call_start: Mapped[datetime] = mapped_column(DateTime)
+    call_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    call_status: Mapped[str] = mapped_column(String(12))
+    record_file: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    transcription_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    transcription_status: Mapped[int] = mapped_column(Integer, default=0)
+    transcription: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    dialog: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    def __repr__(self):
+        return f'<Call {self.caller} -> {self.callee}>'
+
+class Contact(Base):
+    __tablename__ = 'contacts'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+    phone: Mapped[str] = mapped_column(String(11))
+    call_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    is_lead: Mapped[bool] = mapped_column(Boolean, default=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    orders: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)   
+
+    def __repr__(self):
+        return f'<Contact {self.name}>'
+
+class CallCategory(Base):
+    __tablename__ = 'call_categories'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+
+    def __repr__(self):
+        return f'<CallCategory {self.name}>'
+
+
+def init_db():
+    """Создаёт таблицы и инициализирует начальные данные."""
+    Base.metadata.create_all(bind=engine)
+    print("✅ Таблицы созданы.")
+
+    # Используем контекст сессии
+    with Session(engine) as session:
+        # Если пользователя менежер нет то создадим его и пароль по умолчанию
+        user = session.execute(
+            select(User).where(User.username == MANAGER_USER)
+        ).scalar_one_or_none()
+
+        if not user:
+            manager = User(
+                department='admins',
+                username=MANAGER_USER,
+                fio='администратор',
+                phone='0000'
+            )
+            manager.set_password(MANAGER_PWD)
+            session.add(manager)
+            session.commit()
+            print('Начальные данные для пользователя manager добавлены.')        
+
+def get_db():
+    """Генератор сессии — для Flask или FastAPI."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+

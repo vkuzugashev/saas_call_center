@@ -3,15 +3,17 @@ import asyncio, aiormq
 from websockets import serve
 from dotenv import load_dotenv
 from functools import lru_cache
-from model import db, table_users, table_contacts
+from models.model import db, table_users, table_contacts
 
 load_dotenv()
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
-WEBSOCKET_HOST = os.environ.get('WEBSOCKET_HOST', '0.0.0.0')
-WEBSOCKET_PORT = os.environ.get('WEBSOCKET_PORT', 5078)
-RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE', 'events')
+RABBIT_HOST = os.environ.get('RABBIT_HOST')
+WEBSOCKET_HOST = os.environ.get('APP_NEW_CALL_WEBSOCKET_HOST')
+WEBSOCKET_PORT = os.environ.get('APP_NEW_CALL_WEBSOCKET_PORT')
+RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE')
+RABBIT_APP_NEW_CALL_EVENTS_QUEUE = os.environ.get('RABBIT_APP_NEW_CALL_EVENTS_QUEUE')
+
 AMQP_URL = f'amqp://{RABBIT_HOST}/'
 LAST_ACTIVITY_TIMEOUT = 30  # Время неактивности в секундах
 
@@ -100,7 +102,7 @@ async def consummer():
                 channel = await connection.channel()
                 await channel.exchange_declare(exchange=RABBIT_EVENTS_EXCHANGE, exchange_type='fanout')
                 # используем временную очередь
-                declare_ok = await channel.queue_declare(queue='')
+                declare_ok = await channel.queue_declare(queue=RABBIT_APP_NEW_CALL_EVENTS_QUEUE)
                 await channel.queue_bind(exchange=RABBIT_EVENTS_EXCHANGE, queue=declare_ok.queue)
                 await channel.basic_consume(declare_ok.queue, handle_incoming_message, no_ack=True)  
                 logger.info('Ожидание сообщений.')

@@ -13,7 +13,7 @@ load_dotenv()
 
 # Переменные окружения
 # Настройки БД
-DB_USER = os.getenv("DB_USERNAME")
+DB_USER = os.getenv("DB_USER")
 DB_PWD = os.getenv("DB_PWD")
 DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DB_NAME")
@@ -31,14 +31,14 @@ YOS_BUCKET_NAME = "penart-record"
 YOS_REGION = "ru-central1"
 
 # SPEECH
-API_SECRET_KEY = os.getenv("API_SECRET_KEY")
+SPEECH_API_SECRET_KEY = os.getenv("SPEECH_API_SECRET_KEY")
 SPEECH_API_ENDPOINT = "https://transcribe.api.cloud.yandex.net/speech/stt/v2/longRunningRecognize"
 SPEECH_MODEL = os.getenv("SPEECH_MODEL")
 
 # Интервал опроса базы данных (в секундах)
 POLLING_INTERVAL = int(os.getenv("POLLING_INTERVAL", "900"))  # По умолчанию 15 минут
 
-RECORD_URL_PREFIX  = os.getenv('RECORD_URL_PREFIX','http://localhost:8088/static/monitor')
+ASTERISK_RECORD_URL  = os.getenv('ASTERISK_RECORD_URL','http://localhost:8088/static/monitor')
 
 # Настройка логирования
 logging.basicConfig(level=LOG_LEVEL)
@@ -61,7 +61,7 @@ TEMP_DIR = tempfile.mkdtemp()
 
 # Функция для скачивания файла по ссылке
 def download_file(record_file, save_path):
-    url = RECORD_URL_PREFIX +'/'+ record_file
+    url = ASTERISK_RECORD_URL +'/'+ record_file
     try:
         response = requests.get(url, stream=True)
         response.raise_for_status()  # Проверка успешного ответа
@@ -96,7 +96,7 @@ def upload_file_to_yos_bucket(file_path, object_name):
 
 # Функция для отправки запроса на распознавание речи
 def recognize_audio(record_file):
-    headers = {"Authorization": f"Api-Key {API_SECRET_KEY}"}
+    headers = {"Authorization": f"Api-Key {SPEECH_API_SECRET_KEY}"}
     payload = {"config": {
                     "specification": { 
                         "model": SPEECH_MODEL,    #general - основной режим, deferred-general - отложенный

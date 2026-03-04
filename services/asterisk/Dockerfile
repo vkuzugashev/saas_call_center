@@ -1,4 +1,4 @@
-FROM andrius/asterisk:18.11.2-alpine
+FROM andrius/asterisk:alpine-18.11.2
 LABEL maintainer="KS42 team"
 
 EXPOSE 5060/udp 

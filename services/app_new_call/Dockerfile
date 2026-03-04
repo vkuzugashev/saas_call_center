@@ -4,9 +4,9 @@ EXPOSE 5078
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY models/ models/
 COPY app.py .
-COPY model.py .
+COPY requirements.txt .
 
 RUN python -m pip install --no-cache-dir -r requirements.txt
 

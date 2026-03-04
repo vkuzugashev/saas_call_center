@@ -1,9 +1,12 @@
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import login_required
-from models import db, CallCategory
+from models.model import get_db, CallCategory
 
 categories_bp = Blueprint('categories_bp', __name__, template_folder='../templates/call_categories')
+
+def get_session():
+    return next(get_db())
 
 @categories_bp.route('/call_categories', methods=['GET', 'POST'])
 @login_required
@@ -14,29 +17,32 @@ def call_categories():
     Returns:
     Response: Ответ сервера.
     """
-    categories = CallCategory.query.all()
+    with get_session() as session:
+        categories = session.query(CallCategory).all()
 
-    if request.method == 'POST':
-        # Обработка формы для добавления новой категории
-        name = request.form.get('name')
+        if request.method == 'POST':
+            # Обработка формы для добавления новой категории
+            name = request.form.get('name')
 
-        # Проверка наличия имени категории
-        if not name:
-            flash('Имя категории не может быть пустым.', 'danger')
-            return redirect(url_for('categories_bp.call_categories'))
+            # Проверка наличия имени категории
+            if not name:
+                flash('Имя категории не может быть пустым.', 'danger')
+                return redirect(url_for('categories_bp.call_categories'))
+            
+            # Проверка, что категория с таким именем не существует
+            existing_category = session.query(CallCategory).filter(CallCategory.name==name).first()
+            
+            if existing_category:
+                flash(f'Категория [{name}] уже существует.', 'danger')
+                return redirect(url_for('categories_bp.call_categories'))
         
-        # Проверка, что категория с таким именем не существует
-        existing_category = CallCategory.query.filter_by(name=name).first()
-        if existing_category:
-            flash(f'Категория [{name}] уже существует.', 'danger')
+            # Создание новой категории вызова
+            new_category = CallCategory(name=name)
+            session.add(new_category)
+            session.commit()
+            
+            flash(f'Категория [{name}] успешно добавлена!', 'success')
             return redirect(url_for('categories_bp.call_categories'))
-       
-        # Создание новой категории вызова
-        new_category = CallCategory(name=name)
-        db.session.add(new_category)
-        db.session.commit()
-        flash(f'Категория [{name}] успешно добавлена!', 'success')
-        return redirect(url_for('categories_bp.call_categories'))
 
     return render_template('call_categories.html', categories = categories, modules = current_app.config['modules'])
 
@@ -53,7 +59,11 @@ def edit_call_category(id):
     Returns:
         Response: Ответ сервера.
     """
-    category = CallCategory.query.get_or_404(id)
+    with get_session() as session:
+        category = session.get(CallCategory, id)
+        if not category:
+            flash('Категория не найдена.', 'danger')
+            return redirect(url_for('categories_bp.call_categories'))
 
     if request.method == 'POST':
         # Обработка формы для редактирования категории
@@ -67,7 +77,8 @@ def edit_call_category(id):
         
         if id != newid:
             # Проверка наличия дубликтов категории с таким же id
-            existing_category = CallCategory.query.filter_by(id=newid).first()
+            existing_category = session.get(CallCategory, newid)
+            
             if existing_category:
                 flash(f'Категория [{existing_category.name}] уже существует с таким id [{newid}].', 'danger')
                 return redirect(url_for('categories_bp.edit_call_category', id=id))
@@ -79,14 +90,15 @@ def edit_call_category(id):
 
         if id == newid:
             # Проверка наличия дубликтов категории с таким же именем
-            existing_category = CallCategory.query.filter_by(name=name).first()
+            existing_category = session.query(CallCategory).filter(CallCategory.name==name).first()           
             if existing_category:
                 flash(f'Категория [{name}] уже существует.', 'danger')
                 return redirect(url_for('categories_bp.edit_call_category', id=id))
        
         category.id = newid
         category.name = name
-        db.session.commit()
+        session.commit()
+        
         flash(f'Категория [{category.name}] успешно отредактирована!', 'success')
         return redirect(url_for('categories_bp.call_categories'))
 
@@ -96,34 +108,43 @@ def edit_call_category(id):
 @categories_bp.route('/call_categories/delete/<int:id>', methods=['GET'])
 @login_required
 def delete_call_category_confirmation(id):
-   """
-   Обработчик для отображения страницы подтверждения удаления категории вызова.
+    """
+    Обработчик для отображения страницы подтверждения удаления категории вызова.
 
-   Args:
-       id (int): Идентификатор категории вызова, которую нужно удалить.
+    Args:
+        id (int): Идентификатор категории вызова, которую нужно удалить.
 
-   Returns:
-       Response: Ответ сервера.
-   """
-   category = CallCategory.query.get_or_404(id)
-   return render_template('delete_confirmation.html', category=category, modules = current_app.config['modules'])
+    Returns:
+        Response: Ответ сервера.
+    """
+    with get_session() as session:
+            category = session.get(CallCategory, id)            
+            if not category:
+                return 404
+    
+    return render_template('delete_confirmation.html', category=category, modules = current_app.config['modules'])
 
 
 
 @categories_bp.route('/call_categories/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_call_category(id):
-   """
-   Обработчик для удаления категории вызова.
+    """
+    Обработчик для удаления категории вызова.
 
-   Args:
+    Args:
        id (int): Идентификатор категории вызова, которую нужно удалить.
 
-   Returns:
+    Returns:
        Response: Ответ сервера.
-   """
-   category = CallCategory.query.get_or_404(id)
-   db.session.delete(category)
-   db.session.commit()
-   flash(f'Категория [{category.name}] успешно удалена!', 'success')
-   return redirect(url_for('categories_bp.call_categories'))
+    """
+    with get_session() as session:
+        category = session.get(CallCategory, id)        
+        if not category:
+            return 404
+        
+        session.delete(category)
+        session.commit()
+        flash(f'Категория [{category.name}] успешно удалена!', 'success')
+   
+    return redirect(url_for('categories_bp.call_categories'))

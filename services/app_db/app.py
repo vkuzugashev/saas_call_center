@@ -1,13 +1,14 @@
 import logging, pika, sys, os, json
 from datetime import datetime, timezone
-from model import db, table_calls, table_users, table_contacts
+from models.model import db, table_calls, table_users, table_contacts
 from dotenv import load_dotenv
 
 load_dotenv()
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
-RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
+RABBIT_HOST = os.environ.get('RABBIT_HOST')
+RABBIT_PORT = int(os.environ.get('RABBIT_PORT'))
+RABBIT_CALLS_QUEUE=os.environ.get('RABBIT_CALLS_QUEUE')
 
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger(__name__)
@@ -15,8 +16,8 @@ logger = logging.getLogger(__name__)
 def run():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST, port=RABBIT_PORT))
     channel = connection.channel()
-    channel.queue_declare(queue='calls')   
-    channel.basic_consume(queue='calls', auto_ack=False, on_message_callback=callback)
+    channel.queue_declare(queue=RABBIT_CALLS_QUEUE)   
+    channel.basic_consume(queue=RABBIT_CALLS_QUEUE, auto_ack=False, on_message_callback=callback)
     logger.info('Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
 

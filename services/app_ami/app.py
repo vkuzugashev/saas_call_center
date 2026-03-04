@@ -6,13 +6,13 @@ from asterisk.ami import AMIClient, AutoReconnect
 load_dotenv()
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-ASTERISK_HOST = os.environ.get('ASTERISK_HOST', 'localhost')
-ASTERISK_PORT = int(os.environ.get('ASTERISK_PORT', '5038'))
-ASTERISK_USER = os.environ.get('ASTERISK_USER', 'managerami')
-ASTERISK_PWD = os.environ.get('ASTERISK_PWD', 'mysecret')
-RABBIT_HOST = os.environ.get('RABBIT_HOST', 'localhost')
-RABBIT_PORT = int(os.environ.get('RABBIT_PORT', '5672'))
-RABBIT_EVENTS_ECHANGE = os.environ.get('RABBIT_EVENTS_ECHANGE', 'events')
+ASTERISK_HOST = os.environ.get('ASTERISK_HOST')
+ASTERISK_PORT = int(os.environ.get('ASTERISK_PORT'))
+ASTERISK_USER = os.environ.get('ASTERISK_USER')
+ASTERISK_PWD = os.environ.get('ASTERISK_PWD')
+RABBIT_HOST = os.environ.get('RABBIT_HOST')
+RABBIT_PORT = int(os.environ.get('RABBIT_PORT'))
+RABBIT_EVENTS_EXCHANGE = os.environ.get('RABBIT_EVENTS_EXCHANGE')
 
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def event_listener(event, **kwargs):
 def publish_event(event):
     try:
         # публикация в обменник
-        channel.basic_publish(exchange=RABBIT_EVENTS_ECHANGE, routing_key='', body=json.dumps({'event': event.name, 'params': event.keys}))
+        channel.basic_publish(exchange=RABBIT_EVENTS_EXCHANGE, routing_key='', body=json.dumps({'event': event.name, 'params': event.keys}))
         logger.info(f"Sent asterisk to queue, event: {event}")
     except pika.exceptions.AMQPConnectionError as e:
         logger.error(f"Ошибка подключения к RabbitMQ: {e}")
@@ -35,7 +35,7 @@ def setup_rabbitmq():
     global connection, channel
     connection = pika.BlockingConnection(pika.ConnectionParameters(RABBIT_HOST, port=RABBIT_PORT))
     channel = connection.channel()
-    channel.exchange_declare(exchange=RABBIT_EVENTS_ECHANGE, exchange_type='fanout')
+    channel.exchange_declare(exchange=RABBIT_EVENTS_EXCHANGE, exchange_type='fanout')
 
 def run():
     logger.info('Starting ...')

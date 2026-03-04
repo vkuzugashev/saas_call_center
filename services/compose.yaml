@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     container_name: scc-mariadb
     env_file:
-      - ./mariadb/.env
+      - ./.env
     ports:
       - "3306:3306"
     volumes:
@@ -81,11 +81,11 @@ services:
       dockerfile: Dockerfile
     container_name: scc-app
     env_file:
-      - ./app/.env
+      - ./.env
+    ports:
+      - "5000:5000"
     depends_on:
-      asterisk:
-        condition: service_healthy
-      rabbitmq:
+      mariadb:
         condition: service_healthy
     restart: unless-stopped
 
@@ -95,7 +95,7 @@ services:
       dockerfile: Dockerfile
     container_name: scc-app_ami
     env_file:
-      - ./app_ami/.env
+      - ./.env
     depends_on:
       asterisk:
         condition: service_healthy
@@ -109,7 +109,7 @@ services:
       dockerfile: Dockerfile
     container_name: scc-app_call
     env_file:
-      - ./app_call/.env
+      - ./.env
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -123,7 +123,7 @@ services:
       dockerfile: Dockerfile
     container_name: scc-app_db
     env_file:
-      - ./app_db/.env
+      - ./.env
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -137,7 +137,7 @@ services:
       dockerfile: Dockerfile
     container_name: scc-app_new_call
     env_file:
-      - ./app_new_call/.env
+      - ./.env
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -151,7 +151,7 @@ services:
       dockerfile: Dockerfile
     container_name: scc-app_rcv_trns
     env_file:
-      - ./app_rcv_trns/.env
+      - ./.env
     depends_on:
       mariadb:
         condition: service_healthy
@@ -163,7 +163,7 @@ services:
       dockerfile: Dockerfile
     container_name: scc-app_snd_trns
     env_file:
-      - ./app_snd_trns/.env
+      - ./.env
     depends_on:
       mariadb:
         condition: service_healthy
