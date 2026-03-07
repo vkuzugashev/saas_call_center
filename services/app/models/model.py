@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import os
 from typing import Optional
 from flask_login import UserMixin
-from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, String, Text, create_engine, func, select
+from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, SmallInteger, String, Text, create_engine, func, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 import hashlib
@@ -158,6 +158,23 @@ class PJSIPGlobalSetting(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     option_key: Mapped[str] = mapped_column(String(80))
     value: Mapped[str] = mapped_column(String(255))
+
+
+class Extension(Base):
+    """
+    Представляет таблицу `extensions`, содержащую информацию о расширениях (extens).
+    """
+    __tablename__ = 'extensions'
+
+    # Основные поля таблицы
+    id: Mapped[int] = mapped_column(primary_key=True)
+    exten: Mapped[str] = mapped_column(String(10))  # Номер телефона
+    context: Mapped[str] = mapped_column(String(80))  # Контекст набора
+    priority: Mapped[int] = mapped_column(SmallInteger)  # Уровень приоритета
+    app: Mapped[str] = mapped_column(String(80))  # Приложение обработки звонка
+    appdata: Mapped[str] = mapped_column(Text)  # Дополнительные настройки приложения
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)  # Активно ли расширение
+    description: Mapped[Optional[str]] = mapped_column(Text)  # Описание расширения
 
 
 def init_db():

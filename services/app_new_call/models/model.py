@@ -10,8 +10,8 @@ db_host = os.environ.get('DB_HOST', 'localhost')
 db_port = os.environ.get('DB_PORT', 3306)
 db_name = os.environ.get('DB_NAME', 'call_center')
 db_url = f'mysql+pymysql://{db_user}:{db_pwd}@{db_host}/{db_name}'
-db = create_engine(db_url, echo=True)
 
+db = create_engine(db_url, echo=True)
 metadata = MetaData()
 
 table_users = Table('users', metadata, 
