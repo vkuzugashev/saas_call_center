@@ -102,46 +102,43 @@ class CallCategory(Base):
 
 
 class PJSIPEndpoint(Base):
-    __tablename__ = "pjsip_endpoints"
+    __tablename__ = "ps_endpoints"
     
     id: Mapped[int] = mapped_column(primary_key=True)
     transport: Mapped[str] = mapped_column(String(80))
     aors: Mapped[str] = mapped_column(String(80))
     auth: Mapped[str] = mapped_column(String(80))
-    callerid: Mapped[str] = mapped_column(String(80))
-    direct_media: Mapped[bool] = mapped_column(default=True)
-    dtmf_mode: Mapped[str] = mapped_column(String(80), default="rfc4733") # ENUM('rfc4733', 'inband', 'info')
+    context: Mapped[str] = mapped_column(String(80))
+    direct_media: Mapped[str] = mapped_column(String(80))
     disallow: Mapped[str] = mapped_column(String(80))
     allow: Mapped[str] = mapped_column(String(80))
-    force_rport: Mapped[bool] = mapped_column(default=False)
-    rewrite_contact: Mapped[bool] = mapped_column(default=True)
 
     def __repr__(self):
         return f'<PJSIPEndpoint {self.transport}>' ,
 
 # Таблица pjsip_aors
 class PJSIPEndpointAOR(Base):
-    __tablename__ = 'pjsip_aors'
+    __tablename__ = 'ps_aors'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    contact: Mapped[str] = mapped_column(String(255))
     max_contacts: Mapped[int] = mapped_column(default=1)
     remove_existing: Mapped[bool] = mapped_column(default=True)
 
 
 # Таблица pjsip_authentications
 class PJSIPAuthentication(Base):
-    __tablename__ = 'pjsip_authentications'
+    __tablename__ = 'ps_auths'
     
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(80))
+    auth_type: Mapped[str] = mapped_column(String(80))
     password: Mapped[str] = mapped_column(String(80))
-    realm: Mapped[str] = mapped_column(String(80))
+    md5_cred: Mapped[str] = mapped_column(String(80))
 
 
 # Таблица pjsip_transports
 class PJSIPTransport(Base):
-    __tablename__ = 'pjsip_transports'
+    __tablename__ = 'ps_transports'
     
     id: Mapped[int] = mapped_column(primary_key=True)
     protocol: Mapped[str] = mapped_column(String(10))   #Enum('tcp', 'udp', 'tls'))
@@ -149,15 +146,6 @@ class PJSIPTransport(Base):
     port: Mapped[int]
     certfile: Mapped[str] = mapped_column(String(255))
     privkeyfile: Mapped[str] = mapped_column(String(255))
-
-
-# Таблица pjsip_global_settings
-class PJSIPGlobalSetting(Base):
-    __tablename__ = 'pjsip_global_settings'
-    
-    id: Mapped[int] = mapped_column(primary_key=True)
-    option_key: Mapped[str] = mapped_column(String(80))
-    value: Mapped[str] = mapped_column(String(255))
 
 
 class Extension(Base):
