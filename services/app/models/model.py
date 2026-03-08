@@ -104,7 +104,7 @@ class CallCategory(Base):
 class PJSIPEndpoint(Base):
     __tablename__ = "ps_endpoints"
     
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
     transport: Mapped[str] = mapped_column(String(80))
     aors: Mapped[str] = mapped_column(String(80))
     auth: Mapped[str] = mapped_column(String(80))
@@ -120,7 +120,7 @@ class PJSIPEndpoint(Base):
 class PJSIPEndpointAOR(Base):
     __tablename__ = 'ps_aors'
     
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
     max_contacts: Mapped[int] = mapped_column(default=1)
     remove_existing: Mapped[bool] = mapped_column(default=True)
 
@@ -129,7 +129,7 @@ class PJSIPEndpointAOR(Base):
 class PJSIPAuthentication(Base):
     __tablename__ = 'ps_auths'
     
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
     username: Mapped[str] = mapped_column(String(80))
     auth_type: Mapped[str] = mapped_column(String(80))
     password: Mapped[str] = mapped_column(String(80))
@@ -140,7 +140,7 @@ class PJSIPAuthentication(Base):
 class PJSIPTransport(Base):
     __tablename__ = 'ps_transports'
     
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
     protocol: Mapped[str] = mapped_column(String(10))   #Enum('tcp', 'udp', 'tls'))
     bind_addr: Mapped[str] = mapped_column(String(80))
     port: Mapped[int]
