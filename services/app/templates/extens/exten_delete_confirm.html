@@ -1,0 +1,14 @@
+<!-- templates/user_delete_confirm.html -->
+{% extends "base.html" %}
+
+{% block title %}Подтверждение удаления абонента{% endblock %}
+
+{% block content %}
+<h1>Подтверждение удаления абонента</h1>
+<p>Вы действительно хотите удалить абонента "{{ exten.id }}, {{ exten.fio }}"?</p>
+
+<form method="POST">
+    <button type="submit" class="btn btn-danger">Да, удалить</button>
+    <a href="{{ url_for('extens_bp.show_extens') }}" class="btn btn-secondary">Нет, вернуться</a>
+</form>
+{% endblock %}

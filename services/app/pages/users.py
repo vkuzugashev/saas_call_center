@@ -7,7 +7,7 @@ import tempfile
 from flask import Blueprint, current_app, flash, make_response, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 import requests
-from sqlalchemy import select
+from sqlalchemy import func, select
 from models.model import get_db, User
 
 users_bp = Blueprint('users_bp', __name__, template_folder='../templates/users')
@@ -27,19 +27,9 @@ def show_users():
         Response: Ответ сервера.
     """
     with get_session() as session:
-        departments = session.query(User.department).distinct().all()
-
-        selected_department = request.args.get('department')
-
-        if selected_department:
-            users = session.query(User).filter(User.department == selected_department).all()
-        else:
-            users = session.query(User).all()
-
+        users = session.query(User).all()
         return render_template('users.html',
                                 users=users,
-                                departments=departments,
-                                selected_department=selected_department,
                                 modules = current_app.config['modules'])
 
 
@@ -54,15 +44,11 @@ def create_user():
     """
     # Получаем список существующих отделов
     with get_session() as session:
-        existing_departments = session.query(User.department).distinct().all()
-
         if request.method == 'POST':
             # Получаем данные из формы
-            department = request.form['new_department'] or request.form['existing_department']
             username = request.form['username']
             fio = request.form['fio']
             phone = request.form['phone']
-            queue = request.form['queue']
             password = request.form['password'].strip()
 
             if not password:
@@ -70,7 +56,7 @@ def create_user():
                 return redirect(url_for('users_bp.show_users'))
             
             # Создаем нового пользователя
-            user = User(username=username, fio=fio, phone=phone, department=department, queue=queue)
+            user = User(username=username, fio=fio, phone=phone)
             user.set_password(password)
             user.updated_at = datetime.now()
 
@@ -85,7 +71,6 @@ def create_user():
 
     return render_template('user_edit.html', 
                             user = None, 
-                            existing_departments = existing_departments,
                             modules = current_app.config['modules'])
 
 
@@ -108,18 +93,10 @@ def edit_user(id):
             flash('Пользователь не найден.', 'danger')
             return redirect(url_for('users_bp.show_users'))
         
-        # Получаем список существующих отделов
-        existing_departments = session.query(User.department).distinct().all()
-        
-        logger.debug('Departmets:', existing_departments)
-
         if request.method == 'POST':
             # Получаем данные из формы
-            department = request.form['new_department'] or request.form['existing_department']
-            user.department = department
             user.fio = request.form['fio']
             user.phone = request.form['phone']
-            user.queue = request.form['queue']
             password = request.form['password'].strip()
             # user.updated_at = datetime.now()
 
@@ -134,7 +111,6 @@ def edit_user(id):
         
         return render_template('user_edit.html', 
                                 user = user, 
-                                existing_departments = existing_departments,
                                 modules = current_app.config['modules'])
 
 
@@ -196,14 +172,11 @@ def users_export_csv():
         cw = csv.writer(si)
         
         # Заголовки столбцов
-        cw.writerow(['ID', 'Отдел', 'Имя пользователя', 'ФИО', 'Телефон','Очередь', 'Пароль'])
+        cw.writerow(['ID', 'Имя пользователя', 'ФИО', 'Телефон', 'Пароль'])
         
         # Заполняем строки данными
         for user in users:
-            if is_asterisk_hash:
-                cw.writerow([user.id, user.department, user.username, user.fio, user.phone, user.queue, user.asterisk_hash])
-            else:
-                cw.writerow([user.id, user.department, user.username, user.fio, user.phone, user.queue, None])
+            cw.writerow([user.id, user.username, user.fio, user.phone, None])
         
         # Преобразуем содержимое StringIO в байты
         output = make_response(si.getvalue())
@@ -250,8 +223,6 @@ def users_upload_csv():
 
         # Чтение данных из загруженного CSV-файла
         try:
-            # получаем текущую дату и время для записи времени обновления без милисекунд
-            upload_time = datetime.now().replace(microsecond=0)
             with get_session() as session:
                 with open(filepath, mode='r', encoding='utf-8') as csvfile:
                     # Чтение данных из загруженного CSV-файла
@@ -261,7 +232,7 @@ def users_upload_csv():
                     for row in reader:
                         # Парсим данные из каждой строки
                         try:
-                            _, department, username, fio, phone, queue, password = row
+                            _, username, fio, phone, password = row
                         except ValueError:
                             continue  # Пропускаем строки с неверной структурой
 
@@ -273,11 +244,9 @@ def users_upload_csv():
                         existing_user = session.query(User).filter(User.username == username).first()
                         if existing_user:
                             # Обновляем данные существующего пользователя
-                            existing_user.department = department
                             existing_user.fio = fio
                             existing_user.phone = phone
-                            existing_user.queue = queue
-                            existing_user.updated_at = upload_time
+
                             if current_user.id == existing_user.id:
                                 flash('Вы не можете сменить парль у самого себя.', 'danger')
                             else:
@@ -292,12 +261,9 @@ def users_upload_csv():
                                 return redirect(request.url)
                             
                             new_user = User(
-                                department=department,
                                 username=username,
                                 fio=fio,
-                                phone=phone,
-                                queue=queue,
-                                updated_at=upload_time
+                                phone=phone
                             )
                             new_user.set_password(password)
 
@@ -306,13 +272,13 @@ def users_upload_csv():
                 # Сохраняем изменения в базу данных
                 session.commit()
                 
-                # Удалим все записи старше upload_time кроме admin
+                # Удалим все записи старше текущего времени кроме admin
                 admin_user = session.query(User).filter(User.username == current_app.config['MANAGER_USER']).first()                
                 if admin_user:
-                    session.query(User).filter(User.updated_at < upload_time, User.id != admin_user.id).delete()
+                    session.query(User).filter(User.updated_at < func.now(), User.id != admin_user.id).delete()
                 else:
                     # если не найден админ то удаляем всех пользователей
-                    session.query(User).filter(User.updated_at < upload_time).delete()
+                    session.query(User).filter(User.updated_at < func.now()).delete()
                 
                 session.commit()
 
@@ -330,21 +296,3 @@ def users_upload_csv():
 
     else:
         return render_template('users_upload_file.html')
-
-@users_bp.route('/users/restart/asterisk', methods=['GET'])
-def restart_asterisk():
-   url = current_app.config['MANAGEMENT_CONSOLE_URL']
-   response = requests.get(f'{url}/service/build/asterisk')
-   if response.status_code == 200:
-      flash('Asterisk build successful', 'success')
-   else:
-      flash(f'Asterisk build failed, {response.text}', 'danger')
-      return redirect(url_for('users_bp.show_users'))
-    
-   response = requests.get(f'{url}/service/start/asterisk')
-   if response.status_code == 200:
-      flash('Asterisk start successful', 'success')
-   else:
-      flash(f'Asterisk start failed, {response.text}', 'danger')
-
-   return redirect(url_for('users_bp.show_users'))

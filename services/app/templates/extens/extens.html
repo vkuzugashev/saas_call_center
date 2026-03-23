@@ -1,0 +1,58 @@
+<!-- services/app/templates/extens/extens.html -->
+
+{% extends "base.html" %}
+
+{% block title %}SIP Абоненты (ps_endpoints){% endblock %}
+
+{% block content %}
+<h1>SIP Абоненты</h1>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <form method="GET">
+        <div class="input-group">
+            <select name="department" class="form-select" onchange="this.form.submit();">
+                <option value="">Все отделы</option>
+                {% for department in departments %}
+                    <option value="{{ department[0] }}" {{ 'selected' if selected_department == department[0] else '' }}>
+                        {{ department[0] }}
+                    </option>
+                {% endfor %}
+            </select>
+            <span class="input-group-text">Фильтр по отделу</span>
+        </div>
+    </form>
+    <div class="d-flex">
+        <a href="{{ url_for('extens_bp.create_exten') }}" class="btn btn-success">Добавить абонента</a>
+        &nbsp;
+        <a href="{{ url_for('extens_bp.extens_export_csv') }}" class="btn btn-info">Экспорт CSV</a>
+        &nbsp;
+        <a href="{{ url_for('extens_bp.extens_upload_csv') }}" class="btn btn-info">Импорт CSV</a>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID (номер)</th>
+            <th>Отдел</th>
+            <th>Логин</th>
+            <th>ФИО</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ep in extens %}
+        <tr>
+            <td>{{ ep.PJSIPEndpoint.id }}</td>
+            <td>{{ ep.PJSIPEndpoint.department }}</td>
+            <td>{{ ep.username }}</td>
+            <td>{{ ep.PJSIPEndpoint.fio }}</td>
+            <td>
+                <a href="{{ url_for('extens_bp.edit_exten', id=ep.PJSIPEndpoint.id) }}" class="btn btn-primary btn-sm">Редактировать</a>
+                <a href="{{ url_for('extens_bp.delete_exten', id=ep.PJSIPEndpoint.id) }}" class="btn btn-danger btn-sm">Удалить</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

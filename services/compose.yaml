@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
     # 🔍 Healthcheck: проверка доступности MariaDB
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p$$MARIADB_ROOT_PASSWORD$"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p$MARIADB_ROOT_PASSWORD"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -63,7 +63,7 @@ services:
       - "8088:8088"
       - "8089:8089"
     volumes:
-      - asterisk_sounds:/var/lib/asterisk/sounds
+      - ./asterisk/sounds/ru:/var/lib/asterisk/sounds
       - asterisk_log:/var/log/asterisk
       - asterisk_monitor:/var/spool/asterisk/monitor
     restart: unless-stopped
@@ -171,6 +171,6 @@ services:
 
 volumes:
   mariadb_data:
-  asterisk_sounds:
+#  asterisk_sounds:
   asterisk_log:
   asterisk_monitor:

@@ -1,0 +1,53 @@
+<!-- services/app/templates/extens/exten_create.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Создать нового абонента{% endblock %}
+
+{% block content %}
+<h2>Создать нового SIP-абонента</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="id" class="form-label">Номер (ID)</label>
+        <input type="text" name="id" class="form-control" id="id" placeholder="101, 200 и т.д." required pattern="\d+" title="Только цифры">
+        <div class="form-text">Внутренний номер абонента. Используется как ID, AORS и Auth.</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="fio" class="form-label">ФИО</label>
+        <input type="text" name="fio" class="form-control" id="fio" placeholder="Иванов Иван Иванович" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="department" class="form-label">Отдел</label>
+        <input 
+            type="text" 
+            name="department" 
+            class="form-control" 
+            id="department" 
+            list="departments-list" 
+            placeholder="Введите или выберите отдел"
+            required>
+        <datalist id="departments-list">
+            {% for dept in departments %}
+                <option value="{{ dept[0] }}">
+            {% endfor %}
+        </datalist>
+        <div class="form-text">Можно выбрать из списка или ввести новый отдел вручную.</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="username" class="form-label">Логин</label>
+        <input type="text" name="username" class="form-control" id="username" placeholder="Логин" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="password" class="form-label">Пароль</label>
+        <input type="password" name="password" class="form-control" id="password" placeholder="Пароль для регистрации SIP" required minlength="4">
+    </div>
+
+    <button type="submit" class="btn btn-success">Создать абонента</button>
+    <a href="{{ url_for('extens_bp.show_extens') }}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}

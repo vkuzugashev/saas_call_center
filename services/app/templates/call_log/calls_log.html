@@ -46,6 +46,7 @@
             {% endif %}
             {% if modules['MOD_TRANSCRIPT'] %}
             <th scope="col">Диалог</th>
+            <th scope="col">Расшифровка</th>
             {% endif %}
         </tr>
     </thead>
@@ -72,6 +73,22 @@
                     Показать
                 </button>
                 <div id="dialog{{call.id}}" style="display: none">{{ call.dialog }}</div>
+                {% endif %}
+            </td>
+            <td>
+                {% if call.transcription_status == 0 %}
+                    <span class="badge bg-secondary">Ожидает</span>
+                {% elif call.transcription_status == 1 %}
+                    <span class="badge bg-success">Готово</span>
+                    <button type="button" class="btn btn-primary btn-sm mt-1" data-bs-toggle="modal" data-bs-target="#transcriptionModal" data-bs-whatever="transcription{{call.id}}">
+                        Открыть
+                    </button>
+                    <div id="transcription{{call.id}}" style="display: none">{{ call.transcription }}</div>
+                    <div id="fullTranscription{{call.id}}" style="display: none">{{ call.transcription }}</div>
+                {% elif call.transcription_status == -1 %}
+                    <span class="badge bg-danger">Ошибка</span>
+                {% else %}
+                    <span class="badge bg-warning">В обработке</span>
                 {% endif %}
             </td>
             {% endif %}
@@ -118,6 +135,31 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно для расшифровки -->
+<div class="modal fade" id="transcriptionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transcriptionModalLabel">Расшифровка звонка</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="playAudioBtn">▶️ Проиграть запись</button>
+                    <a id="downloadTranscriptionBtn" class="btn btn-outline-success btn-sm" href="#" download="transcription.txt">📥 Скачать</a>
+                </div>
+                <audio id="callAudio" style="width: 100%" controls></audio>
+                <hr>
+                <h6>Текст разговора:</h6>
+                <span id="transcriptionText" style="white-space: pre-line"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block script %}
@@ -138,6 +180,35 @@
 
             modalBodyText.innerHTML = dialogText.innerHTML
         })
+    }
+
+    const transcriptionModal = document.getElementById('transcriptionModal');
+    if (transcriptionModal) {
+        transcriptionModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            const transcriptionId = button.getAttribute('data-bs-whatever');
+            const transcriptionText = document.getElementById(transcriptionId);
+            const fullTranscription = document.getElementById('full' + transcriptionId);
+            const modalBodyText = transcriptionModal.querySelector('.modal-body #transcriptionText');
+            const audioElement = document.getElementById('callAudio');
+            const playButton = document.getElementById('playAudioBtn');
+            const downloadButton = document.getElementById('downloadTranscriptionBtn');
+
+            modalBodyText.innerHTML = transcriptionText.innerHTML;
+
+            // Формируем URL записи
+            const callId = transcriptionId.replace('transcription', '');
+            const recordUrl = `/record/${callId}`;
+            audioElement.src = recordUrl;
+
+            // Настройка кнопки воспроизведения
+            playButton.onclick = () => {
+                audioElement.play();
+            };
+
+            // Настройка кнопки скачивания
+            downloadButton.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(fullTranscription.innerHTML);
+        });
     }
 </script>
 {% endblock %}

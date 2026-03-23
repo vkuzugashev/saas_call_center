@@ -1,0 +1,54 @@
+<!-- services/app/templates/extens/exten_edit.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Редактировать абонента {{ ep.id }}{% endblock %}
+
+{% block content %}
+<h2>Редактировать SIP-абонента: {{ ep.id }}</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="id" class="form-label">Номер (ID)</label>
+        <input type="text" class="form-control" value="{{ ep.id }}" disabled>
+        <div class="form-text">ID абонента нельзя изменить. При необходимости удалите и создайте заново.</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="fio" class="form-label">ФИО</label>
+        <input type="text" name="fio" class="form-control" id="fio" value="{{ ep.fio }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="department" class="form-label">Отдел</label>
+        <input 
+            type="text" 
+            name="department" 
+            class="form-control" 
+            id="department" 
+            value="{{ ep.department }}" 
+            list="departments-list" 
+            placeholder="Введите или выберите из списка"
+            required>
+        <datalist id="departments-list">
+            {% for dept in departments %}
+                <option value="{{ dept[0] }}">
+            {% endfor %}
+        </datalist>
+        <div class="form-text">Можно выбрать из списка или ввести новый отдел вручную.</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="username" class="form-label">Логин</label>
+        <input type="text" name="username" class="form-control" id="username" placeholder="Логин" value="{{ username }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="password" class="form-label">Пароль (оставьте пустым, чтобы не менять)</label>
+        <input type="password" name="password" class="form-control" id="password" placeholder="Новый пароль">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+    <a href="{{ url_for('extens_bp.show_extens') }}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}

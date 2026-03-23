@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import os
 from typing import Optional
 from flask_login import UserMixin
-from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, SmallInteger, String, Text, create_engine, func, select
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, SmallInteger, String, Text, create_engine, func, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 import hashlib
@@ -37,19 +37,14 @@ class User(Base, UserMixin):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    department: Mapped[str] = mapped_column(String(100))
     username: Mapped[str] = mapped_column(String(50), unique=True)
     fio: Mapped[str] = mapped_column(String(200))
     phone: Mapped[str] = mapped_column(String(11))
-    queue: Mapped[Optional[str]] = mapped_column(String(100))
     # Хранится хеш пароля   
     password_hash: Mapped[str] = mapped_column(String(256), use_existing_column=True)  # Хранится хеш пароля    
-    asterisk_hash: Mapped[str] = mapped_column(String(256), use_existing_column=True)  # Хранится хеш пароля для asterisk
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-        # создать md5 пароль для asterisk
-        self.asterisk_hash = hashlib.md5(f'{self.username}:asterisk:{password}'.encode()).hexdigest()
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -104,65 +99,49 @@ class CallCategory(Base):
 class PJSIPEndpoint(Base):
     __tablename__ = "ps_endpoints"
     
-    id: Mapped[str] = mapped_column(String(80), primary_key=True)
-    transport: Mapped[str] = mapped_column(String(80))
-    aors: Mapped[str] = mapped_column(String(80))
-    auth: Mapped[str] = mapped_column(String(80))
-    context: Mapped[str] = mapped_column(String(80))
-    direct_media: Mapped[str] = mapped_column(String(80))
-    disallow: Mapped[str] = mapped_column(String(80))
-    allow: Mapped[str] = mapped_column(String(80))
-
+    id: Mapped[str] = mapped_column(String(11), primary_key=True)
+    department: Mapped[str] = mapped_column(String(100))    
+    fio: Mapped[str] = mapped_column(String(200))
+    transport: Mapped[str] = mapped_column(String(80), default="transport-udp-nat")
+    aors: Mapped[str] = mapped_column(String(11), ForeignKey("ps_aors.id", ondelete="CASCADE"))
+    auth: Mapped[str] = mapped_column(String(11), ForeignKey("ps_auths.id", ondelete="CASCADE"))
+    context: Mapped[str] = mapped_column(String(80), default="internal")
+    direct_media: Mapped[bool] = mapped_column(default=False)
+    disallow: Mapped[str] = mapped_column(String(80), default="all")
+    allow: Mapped[str] = mapped_column(String(80), default="opus,alaw,ulaw,h264,vp8")
+    rewrite_contact: Mapped[bool] = mapped_column(default=True)
+    media_address: Mapped[str] = mapped_column(String(80), default="asterisk")
+    rtp_symmetric: Mapped[bool] = mapped_column(default=True)
+    language: Mapped[str] = mapped_column(String(10), default="ru")    
+    
     def __repr__(self):
         return f'<PJSIPEndpoint {self.transport}>' ,
 
 # Таблица pjsip_aors
-class PJSIPEndpointAOR(Base):
+class PJSIPAor(Base):
     __tablename__ = 'ps_aors'
     
     id: Mapped[str] = mapped_column(String(80), primary_key=True)
     max_contacts: Mapped[int] = mapped_column(default=1)
+    qualify_frequency: Mapped[int] = mapped_column(default=60)
     remove_existing: Mapped[bool] = mapped_column(default=True)
+    contact: Mapped[Optional[str]] = mapped_column(String(80))
 
 
 # Таблица pjsip_authentications
-class PJSIPAuthentication(Base):
+class PJSIPAuth(Base):
     __tablename__ = 'ps_auths'
     
     id: Mapped[str] = mapped_column(String(80), primary_key=True)
     username: Mapped[str] = mapped_column(String(80))
-    auth_type: Mapped[str] = mapped_column(String(80))
-    password: Mapped[str] = mapped_column(String(80))
-    md5_cred: Mapped[str] = mapped_column(String(80))
+    auth_type: Mapped[str] = mapped_column(String(80), default="md5")
+    password: Mapped[Optional[str]] = mapped_column(String(80))
+    md5_cred: Mapped[Optional[str]] = mapped_column(String(80))
 
-
-# Таблица pjsip_transports
-class PJSIPTransport(Base):
-    __tablename__ = 'ps_transports'
-    
-    id: Mapped[str] = mapped_column(String(80), primary_key=True)
-    protocol: Mapped[str] = mapped_column(String(10))   #Enum('tcp', 'udp', 'tls'))
-    bind_addr: Mapped[str] = mapped_column(String(80))
-    port: Mapped[int]
-    certfile: Mapped[str] = mapped_column(String(255))
-    privkeyfile: Mapped[str] = mapped_column(String(255))
-
-
-class Extension(Base):
-    """
-    Представляет таблицу `extensions`, содержащую информацию о расширениях (extens).
-    """
-    __tablename__ = 'extensions'
-
-    # Основные поля таблицы
-    id: Mapped[int] = mapped_column(primary_key=True)
-    exten: Mapped[str] = mapped_column(String(10))  # Номер телефона
-    context: Mapped[str] = mapped_column(String(80))  # Контекст набора
-    priority: Mapped[int] = mapped_column(SmallInteger)  # Уровень приоритета
-    app: Mapped[str] = mapped_column(String(80))  # Приложение обработки звонка
-    appdata: Mapped[str] = mapped_column(Text)  # Дополнительные настройки приложения
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)  # Активно ли расширение
-    description: Mapped[Optional[str]] = mapped_column(Text)  # Описание расширения
+    def set_password(self, password):
+        # создать md5 пароль для asterisk
+        self.auth_type = 'md5'
+        self.md5_cred = hashlib.md5(f'{self.username}:asterisk:{password}'.encode()).hexdigest()
 
 
 def init_db():
