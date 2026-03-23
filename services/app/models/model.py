@@ -152,13 +152,10 @@ def init_db():
     # Используем контекст сессии
     with Session(engine) as session:
         # Если пользователя менежер нет то создадим его и пароль по умолчанию
-        user = session.execute(
-            select(User).where(User.username == MANAGER_USER)
-        ).scalar_one_or_none()
+        user = session.query(User).filter(User.username == MANAGER_USER).first()
 
         if not user:
             manager = User(
-                department='admins',
                 username=MANAGER_USER,
                 fio='администратор',
                 phone='0000'
